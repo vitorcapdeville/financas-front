@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { transacoesService } from '@/services/api.service';
+import { transacoesService, configuracoesService } from '@/services/api.service';
 import { ResumoMensal } from '@/types';
 import { formatarMes, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
 
@@ -9,20 +9,58 @@ export default function Home() {
   const [periodo, setPeriodo] = useState(
     `${obterAnoAtual()}-${String(obterMesAtual()).padStart(2, '0')}`
   );
+  const [diaInicio, setDiaInicio] = useState(1);
   const [resumo, setResumo] = useState<ResumoMensal | null>(null);
   const [loading, setLoading] = useState(true);
 
   const mes = parseInt(periodo.split('-')[1]);
   const ano = parseInt(periodo.split('-')[0]);
 
+  // Carrega dia de início do banco de dados
+  useEffect(() => {
+    const carregarDiaInicio = async () => {
+      try {
+        const config = await configuracoesService.obter('diaInicioPeriodo');
+        if (config.valor) {
+          setDiaInicio(parseInt(config.valor));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configuração:', error);
+      }
+    };
+    carregarDiaInicio();
+  }, []);
+
+  // Salva dia de início no banco de dados
+  const handleDiaInicioChange = async (novoDia: number) => {
+    setDiaInicio(novoDia);
+    try {
+      await configuracoesService.salvar('diaInicioPeriodo', novoDia.toString());
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
+    }
+  };
+
+  // Calcula as datas de início e fim baseado no dia configurado
+  const calcularPeriodo = () => {
+    const dataInicioCalc = new Date(ano, mes - 1, diaInicio);
+    const dataFimCalc = new Date(ano, mes, diaInicio - 1);
+    
+    return {
+      data_inicio: dataInicioCalc.toISOString().split('T')[0],
+      data_fim: dataFimCalc.toISOString().split('T')[0]
+    };
+  };
+
   useEffect(() => {
     carregarResumo();
-  }, [periodo]);
+  }, [periodo, diaInicio]);
 
   const carregarResumo = async () => {
     try {
       setLoading(true);
-      const data = await transacoesService.resumoMensal(mes, ano);
+      const { data_inicio, data_fim } = calcularPeriodo();
+      const data = await transacoesService.resumoMensal(undefined, undefined, data_inicio, data_fim);
       setResumo(data);
     } catch (error) {
       console.error('Erro ao carregar resumo:', error);
@@ -45,7 +83,7 @@ export default function Home() {
 
         {/* Seletor de Período */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center flex-wrap">
             <div className="flex-1 max-w-xs">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Período
@@ -57,9 +95,28 @@ export default function Home() {
                 className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+            <div className="flex-1 max-w-xs">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dia de Início do Período
+              </label>
+              <select
+                value={diaInicio}
+                onChange={(e) => handleDiaInicioChange(parseInt(e.target.value))}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
+                  <option key={dia} value={dia}>
+                    Dia {dia}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex-1">
               <div className="text-sm text-gray-500 mt-6">
-                Visualizando: <span className="font-semibold text-gray-900">{formatarMes(mes)} de {ano}</span>
+                Visualizando: <span className="font-semibold text-gray-900">
+                  {new Date(ano, mes - 1, diaInicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} até {' '}
+                  {new Date(ano, mes, diaInicio - 1).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
               </div>
             </div>
           </div>

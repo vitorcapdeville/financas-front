@@ -5,6 +5,8 @@ export const transacoesService = {
   async listar(params?: {
     mes?: number;
     ano?: number;
+    data_inicio?: string;
+    data_fim?: string;
     categoria?: string;
     tipo?: string;
   }): Promise<Transacao[]> {
@@ -31,10 +33,21 @@ export const transacoesService = {
     await api.delete(`/transacoes/${id}`);
   },
 
-  async resumoMensal(mes: number, ano: number): Promise<ResumoMensal> {
-    const { data } = await api.get('/transacoes/resumo/mensal', {
-      params: { mes, ano },
-    });
+  async resumoMensal(
+    mes?: number,
+    ano?: number,
+    data_inicio?: string,
+    data_fim?: string
+  ): Promise<ResumoMensal> {
+    const params: any = {};
+    if (data_inicio && data_fim) {
+      params.data_inicio = data_inicio;
+      params.data_fim = data_fim;
+    } else if (mes && ano) {
+      params.mes = mes;
+      params.ano = ano;
+    }
+    const { data } = await api.get('/transacoes/resumo/mensal', { params });
     return data;
   },
 };
@@ -55,6 +68,18 @@ export const importacaoService = {
     const { data } = await api.post('/importacao/fatura', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return data;
+  },
+};
+
+export const configuracoesService = {
+  async obter(chave: string): Promise<{ chave: string; valor: string | null }> {
+    const { data } = await api.get(`/configuracoes/${chave}`);
+    return data;
+  },
+
+  async salvar(chave: string, valor: string): Promise<{ chave: string; valor: string }> {
+    const { data } = await api.post('/configuracoes/', { chave, valor });
     return data;
   },
 };

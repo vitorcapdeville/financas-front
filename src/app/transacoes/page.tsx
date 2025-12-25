@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { transacoesService } from '@/services/api.service';
+import { transacoesService, configuracoesService } from '@/services/api.service';
 import { Transacao } from '@/types';
 import { formatarData, formatarMoeda, formatarMes, obterMesAtual, obterAnoAtual } from '@/utils/format';
 import { toast } from 'react-hot-toast';
@@ -12,18 +12,56 @@ export default function TransacoesPage() {
   const [periodo, setPeriodo] = useState(
     `${obterAnoAtual()}-${String(obterMesAtual()).padStart(2, '0')}`
   );
+  const [diaInicio, setDiaInicio] = useState(1);
 
   const mes = parseInt(periodo.split('-')[1]);
   const ano = parseInt(periodo.split('-')[0]);
 
+  // Carrega dia de início do banco de dados
+  useEffect(() => {
+    const carregarDiaInicio = async () => {
+      try {
+        const config = await configuracoesService.obter('diaInicioPeriodo');
+        if (config.valor) {
+          setDiaInicio(parseInt(config.valor));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configuração:', error);
+      }
+    };
+    carregarDiaInicio();
+  }, []);
+
+  // Salva dia de início no banco de dados
+  const handleDiaInicioChange = async (novoDia: number) => {
+    setDiaInicio(novoDia);
+    try {
+      await configuracoesService.salvar('diaInicioPeriodo', novoDia.toString());
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
+    }
+  };
+
+  // Calcula as datas de início e fim baseado no dia configurado
+  const calcularPeriodo = () => {
+    const dataInicioCalc = new Date(ano, mes - 1, diaInicio);
+    const dataFimCalc = new Date(ano, mes, diaInicio - 1);
+    
+    return {
+      data_inicio: dataInicioCalc.toISOString().split('T')[0],
+      data_fim: dataFimCalc.toISOString().split('T')[0]
+    };
+  };
+
   useEffect(() => {
     carregarTransacoes();
-  }, [periodo]);
+  }, [periodo, diaInicio]);
 
   const carregarTransacoes = async () => {
     try {
       setLoading(true);
-      const data = await transacoesService.listar({ mes, ano });
+      const { data_inicio, data_fim } = calcularPeriodo();
+      const data = await transacoesService.listar({ data_inicio, data_fim });
       setTransacoes(data);
     } catch (error) {
       console.error('Erro ao carregar transações:', error);
@@ -72,9 +110,28 @@ export default function TransacoesPage() {
                 className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+            <div className="flex-1 max-w-xs">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dia de Início do Período
+              </label>
+              <select
+                value={diaInicio}
+                onChange={(e) => handleDiaInicioChange(parseInt(e.target.value))}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
+                  <option key={dia} value={dia}>
+                    Dia {dia}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex-1">
               <div className="text-sm text-gray-500 mt-6">
-                Exibindo: <span className="font-semibold text-gray-900">{formatarMes(mes)} de {ano}</span>
+                Exibindo: <span className="font-semibold text-gray-900">
+                  {new Date(ano, mes - 1, diaInicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} até {' '}
+                  {new Date(ano, mes, diaInicio - 1).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
               </div>
             </div>
             <div className="ml-auto mt-6">
