@@ -6,14 +6,18 @@ import { ResumoMensal } from '@/types';
 import { formatarMes, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
 
 export default function Home() {
-  const [mes, setMes] = useState(obterMesAtual());
-  const [ano, setAno] = useState(obterAnoAtual());
+  const [periodo, setPeriodo] = useState(
+    `${obterAnoAtual()}-${String(obterMesAtual()).padStart(2, '0')}`
+  );
   const [resumo, setResumo] = useState<ResumoMensal | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const mes = parseInt(periodo.split('-')[1]);
+  const ano = parseInt(periodo.split('-')[0]);
+
   useEffect(() => {
     carregarResumo();
-  }, [mes, ano]);
+  }, [periodo]);
 
   const carregarResumo = async () => {
     try {
@@ -26,9 +30,6 @@ export default function Home() {
       setLoading(false);
     }
   };
-
-  const meses = Array.from({ length: 12 }, (_, i) => i + 1);
-  const anos = Array.from({ length: 5 }, (_, i) => obterAnoAtual() - 2 + i);
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -45,37 +46,21 @@ export default function Home() {
         {/* Seletor de Período */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex gap-4 items-center">
-            <div>
+            <div className="flex-1 max-w-xs">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mês
+                Período
               </label>
-              <select
-                value={mes}
-                onChange={(e) => setMes(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {meses.map((m) => (
-                  <option key={m} value={m}>
-                    {formatarMes(m)}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="month"
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ano
-              </label>
-              <select
-                value={ano}
-                onChange={(e) => setAno(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {anos.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
+            <div className="flex-1">
+              <div className="text-sm text-gray-500 mt-6">
+                Visualizando: <span className="font-semibold text-gray-900">{formatarMes(mes)} de {ano}</span>
+              </div>
             </div>
           </div>
         </div>

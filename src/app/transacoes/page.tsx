@@ -3,18 +3,22 @@
 import { useState, useEffect } from 'react';
 import { transacoesService } from '@/services/api.service';
 import { Transacao } from '@/types';
-import { formatarData, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
+import { formatarData, formatarMoeda, formatarMes, obterMesAtual, obterAnoAtual } from '@/utils/format';
 import { toast } from 'react-hot-toast';
 
 export default function TransacoesPage() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mes, setMes] = useState(obterMesAtual());
-  const [ano, setAno] = useState(obterAnoAtual());
+  const [periodo, setPeriodo] = useState(
+    `${obterAnoAtual()}-${String(obterMesAtual()).padStart(2, '0')}`
+  );
+
+  const mes = parseInt(periodo.split('-')[1]);
+  const ano = parseInt(periodo.split('-')[0]);
 
   useEffect(() => {
     carregarTransacoes();
-  }, [mes, ano]);
+  }, [periodo]);
 
   const carregarTransacoes = async () => {
     try {
@@ -42,9 +46,6 @@ export default function TransacoesPage() {
     }
   };
 
-  const meses = Array.from({ length: 12 }, (_, i) => i + 1);
-  const anos = Array.from({ length: 5 }, (_, i) => obterAnoAtual() - 2 + i);
-
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -60,41 +61,23 @@ export default function TransacoesPage() {
         {/* Filtros */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex gap-4 items-center flex-wrap">
-            <div>
+            <div className="flex-1 max-w-xs">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mês
+                Período
               </label>
-              <select
-                value={mes}
-                onChange={(e) => setMes(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {meses.map((m) => (
-                  <option key={m} value={m}>
-                    {new Date(2000, m - 1).toLocaleString('pt-BR', {
-                      month: 'long',
-                    })}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="month"
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ano
-              </label>
-              <select
-                value={ano}
-                onChange={(e) => setAno(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {anos.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
+            <div className="flex-1">
+              <div className="text-sm text-gray-500 mt-6">
+                Exibindo: <span className="font-semibold text-gray-900">{formatarMes(mes)} de {ano}</span>
+              </div>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto mt-6">
               <a
                 href="/"
                 className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors"
