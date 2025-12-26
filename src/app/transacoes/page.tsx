@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { transacoesService, configuracoesService } from '@/services/api.service';
 import { Transacao } from '@/types';
-import { formatarData, formatarMoeda, formatarMes, obterMesAtual, obterAnoAtual } from '@/utils/format';
+import { formatarData, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
 import { toast } from 'react-hot-toast';
 
 export default function TransacoesPage() {
@@ -68,19 +68,6 @@ export default function TransacoesPage() {
       toast.error('Erro ao carregar transações');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Deseja realmente deletar esta transação?')) return;
-
-    try {
-      await transacoesService.deletar(id);
-      toast.success('Transação deletada com sucesso!');
-      carregarTransacoes();
-    } catch (error) {
-      console.error('Erro ao deletar:', error);
-      toast.error('Erro ao deletar transação');
     }
   };
 
@@ -164,50 +151,26 @@ export default function TransacoesPage() {
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Data
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Descrição
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Categoria
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tipo
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valor
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Origem
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ações
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {transacoes.map((transacao) => (
-                    <tr key={transacao.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatarData(transacao.data)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {transacao.descricao}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                          {transacao.categoria || 'Sem categoria'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                Transações ({transacoes.length})
+              </h2>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {transacoes.map((transacao) => (
+                <a
+                  key={transacao.id}
+                  href={`/transacao/${transacao.id}`}
+                  className="block p-6 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-medium text-gray-900">
+                          {transacao.descricao}
+                        </h3>
                         <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
                             transacao.tipo === 'entrada'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
@@ -215,9 +178,26 @@ export default function TransacoesPage() {
                         >
                           {transacao.tipo === 'entrada' ? 'Entrada' : 'Saída'}
                         </span>
-                      </td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>{formatarData(transacao.data)}</span>
+                        <span>•</span>
+                        <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700">
+                          {transacao.categoria || 'Sem categoria'}
+                        </span>
+                        <span>•</span>
+                        <span className="text-xs">
+                          {transacao.origem === 'manual'
+                            ? 'Manual'
+                            : transacao.origem === 'extrato_bancario'
+                            ? 'Extrato'
+                            : 'Fatura'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <p
+                        className={`text-lg font-bold ${
                           transacao.tipo === 'entrada'
                             ? 'text-green-600'
                             : 'text-red-600'
@@ -225,26 +205,11 @@ export default function TransacoesPage() {
                       >
                         {transacao.tipo === 'entrada' ? '+' : '-'}
                         {formatarMoeda(transacao.valor)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {transacao.origem === 'manual'
-                          ? 'Manual'
-                          : transacao.origem === 'extrato_bancario'
-                          ? 'Extrato'
-                          : 'Fatura'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleDelete(transacao.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Deletar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              ))}
             </div>
 
             {/* Resumo */}

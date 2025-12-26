@@ -183,9 +183,17 @@ export default function Home() {
                     ([categoria, valor]) => (
                       <li
                         key={categoria}
-                        className="flex justify-between items-center py-2 border-b border-gray-100"
+                        className="flex justify-between items-center py-2 border-b border-gray-100 hover:bg-gray-50 transition-colors group"
                       >
-                        <span className="text-gray-700">{categoria}</span>
+                        <a
+                          href={`/categoria/${encodeURIComponent(categoria)}?tipo=entrada`}
+                          className="text-gray-700 hover:text-green-600 font-medium flex items-center gap-2 flex-1"
+                        >
+                          {categoria}
+                          <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            →
+                          </span>
+                        </a>
                         <span className="font-semibold text-green-600">
                           {formatarMoeda(valor)}
                         </span>
@@ -211,9 +219,17 @@ export default function Home() {
                     ([categoria, valor]) => (
                       <li
                         key={categoria}
-                        className="flex justify-between items-center py-2 border-b border-gray-100"
+                        className="flex justify-between items-center py-2 border-b border-gray-100 hover:bg-gray-50 transition-colors group"
                       >
-                        <span className="text-gray-700">{categoria}</span>
+                        <a
+                          href={`/categoria/${encodeURIComponent(categoria)}?tipo=saida`}
+                          className="text-gray-700 hover:text-red-600 font-medium flex items-center gap-2 flex-1"
+                        >
+                          {categoria}
+                          <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            →
+                          </span>
+                        </a>
                         <span className="font-semibold text-red-600">
                           {formatarMoeda(valor)}
                         </span>

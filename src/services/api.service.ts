@@ -33,6 +33,11 @@ export const transacoesService = {
     await api.delete(`/transacoes/${id}`);
   },
 
+  async listarCategorias(): Promise<string[]> {
+    const { data } = await api.get('/transacoes/categorias');
+    return data;
+  },
+
   async resumoMensal(
     mes?: number,
     ano?: number,
