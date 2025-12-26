@@ -4,12 +4,10 @@ import { useState, useEffect } from 'react';
 import { transacoesService, configuracoesService } from '@/services/api.service';
 import { ResumoMensal } from '@/types';
 import { formatarMes, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
+import { usePeriodo } from '@/hooks/usePeriodo';
 
 export default function Home() {
-  const [periodo, setPeriodo] = useState(
-    `${obterAnoAtual()}-${String(obterMesAtual()).padStart(2, '0')}`
-  );
-  const [diaInicio, setDiaInicio] = useState(1);
+  const { periodo, setPeriodo, diaInicio, setDiaInicio } = usePeriodo();
   const [resumo, setResumo] = useState<ResumoMensal | null>(null);
   const [loading, setLoading] = useState(true);
 

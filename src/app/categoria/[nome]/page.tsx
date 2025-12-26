@@ -6,6 +6,7 @@ import { transacoesService, configuracoesService } from '@/services/api.service'
 import { Transacao } from '@/types';
 import { formatarData, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
 import { toast } from 'react-hot-toast';
+import { usePeriodo } from '@/hooks/usePeriodo';
 
 export default function CategoriaPage() {
   const params = useParams();
@@ -15,10 +16,7 @@ export default function CategoriaPage() {
 
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [periodo, setPeriodo] = useState(
-    `${obterAnoAtual()}-${String(obterMesAtual()).padStart(2, '0')}`
-  );
-  const [diaInicio, setDiaInicio] = useState(1);
+  const { periodo, setPeriodo, diaInicio, setDiaInicio } = usePeriodo();
   const [comparativoMeses, setComparativoMeses] = useState<
     { mes: string; total: number }[]
   >([]);
