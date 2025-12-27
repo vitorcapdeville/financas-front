@@ -8,7 +8,6 @@ import { formatarData, formatarMoeda } from '@/utils/format';
 import { toast } from 'react-hot-toast';
 import ModalEditarCategoria from '@/components/ModalEditarCategoria';
 import ModalEditarValor from '@/components/ModalEditarValor';
-import ModalConfirmacao from '@/components/ModalConfirmacao';
 
 export default function TransacaoPage() {
   const params = useParams();
@@ -19,7 +18,6 @@ export default function TransacaoPage() {
   const [loading, setLoading] = useState(true);
   const [modalCategoria, setModalCategoria] = useState(false);
   const [modalValor, setModalValor] = useState(false);
-  const [modalDeletar, setModalDeletar] = useState(false);
 
   useEffect(() => {
     carregarTransacao();
@@ -62,17 +60,6 @@ export default function TransacaoPage() {
     }
   };
 
-  const handleDeletar = async () => {
-    try {
-      await transacoesService.deletar(id);
-      toast.success('Transação deletada!');
-      router.push('/transacoes');
-    } catch (error) {
-      console.error('Erro ao deletar:', error);
-      toast.error('Erro ao deletar transação');
-    }
-  };
-
   if (loading) {
     return (
       <main className="min-h-screen p-8 bg-gray-50 flex items-center justify-center">
@@ -108,17 +95,9 @@ export default function TransacaoPage() {
           >
             ← Voltar
           </button>
-          <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-bold text-gray-900">
-              Detalhes da Transação
-            </h1>
-            <button
-              onClick={() => setModalDeletar(true)}
-              className="text-red-600 hover:text-red-800 font-medium"
-            >
-              🗑️ Deletar
-            </button>
-          </div>
+          <h1 className="text-4xl font-bold text-gray-900">
+            Detalhes da Transação
+          </h1>
         </div>
 
         {/* Card Principal */}
@@ -247,16 +226,6 @@ export default function TransacaoPage() {
             onClose={() => setModalValor(false)}
             valorAtual={transacao.valor}
             onSalvar={handleSalvarValor}
-          />
-          <ModalConfirmacao
-            isOpen={modalDeletar}
-            onClose={() => setModalDeletar(false)}
-            onConfirm={handleDeletar}
-            titulo="Deletar Transação"
-            mensagem="Tem certeza que deseja deletar esta transação? Esta ação não pode ser desfeita."
-            textoBotaoConfirmar="Sim, deletar"
-            textoBotaoCancelar="Cancelar"
-            tipo="danger"
           />
         </>
       )}

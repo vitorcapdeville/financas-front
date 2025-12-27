@@ -27,10 +27,6 @@ export default function ModalEditarValor({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (valor <= 0) {
-      alert('O valor deve ser maior que zero');
-      return;
-    }
 
     setSalvando(true);
     try {
@@ -78,7 +74,7 @@ export default function ModalEditarValor({
                 <input
                   type="number"
                   step="0.01"
-                  min="0.01"
+                  min="0"
                   value={valor}
                   onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
                   className="w-full border border-gray-300 rounded-md pl-10 pr-4 py-3 text-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -132,7 +128,7 @@ export default function ModalEditarValor({
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                0% = Zerar valor | 50% = Metade | 100% = Valor original
+                0% = Desativar transação (valor zerado) | 50% = Metade | 100% = Valor original
               </p>
             </div>
 

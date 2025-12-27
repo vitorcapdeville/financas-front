@@ -29,10 +29,6 @@ export const transacoesService = {
     return data;
   },
 
-  async deletar(id: number): Promise<void> {
-    await api.delete(`/transacoes/${id}`);
-  },
-
   async listarCategorias(): Promise<string[]> {
     const { data } = await api.get('/transacoes/categorias');
     return data;
