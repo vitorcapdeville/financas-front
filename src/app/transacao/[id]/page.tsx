@@ -3,6 +3,7 @@ import { formatarData, formatarMoeda } from '@/utils/format';
 import Link from 'next/link';
 import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
 import BotaoVoltar from '@/components/BotaoVoltar';
+import SeletorTags from '@/components/SeletorTags';
 
 interface TransacaoPageProps {
   params: {
@@ -135,6 +136,12 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
                 </span>
               </div>
             </div>
+
+            {/* Seletor de Tags - Client Component */}
+            <SeletorTags
+              transacaoId={transacao.id}
+              tagsAtuais={transacao.tags || []}
+            />
 
             {transacao.observacoes && (
               <div>

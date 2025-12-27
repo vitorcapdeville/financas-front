@@ -3,6 +3,27 @@ export enum TipoTransacao {
   SAIDA = 'saida',
 }
 
+export interface Tag {
+  id: number;
+  nome: string;
+  cor?: string;
+  descricao?: string;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface TagCreate {
+  nome: string;
+  cor?: string;
+  descricao?: string;
+}
+
+export interface TagUpdate {
+  nome?: string;
+  cor?: string;
+  descricao?: string;
+}
+
 export interface Transacao {
   id: number;
   data: string;
@@ -16,6 +37,7 @@ export interface Transacao {
   data_fatura?: string; // Data de fechamento/pagamento da fatura
   criado_em: string;
   atualizado_em: string;
+  tags: Tag[];
 }
 
 export interface TransacaoCreate {

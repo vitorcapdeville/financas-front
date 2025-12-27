@@ -149,6 +149,69 @@ export default function TransacoesPage() {
 - **Client Component + URL params**: Filtros interativos que precisam de feedback imediato
 - **useState**: Estado efêmero de UI (modal aberto, dropdown expandido, campo de input)
 
+### CRÍTICO: Preservação de Parâmetros de URL em Navegação
+
+**REGRA**: Páginas COM filtros devem preservar `searchParams`. Páginas SEM filtros devem usar `router.back()`.
+
+**Cenário 1 - Páginas COM filtros de período (categoria, transacoes, etc):**
+
+Links que navegam para outras páginas DEVEM preservar `periodo` e `diaInicio`:
+
+```typescript
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+
+export default function PaginaComFiltros() {
+  const searchParams = useSearchParams();
+  const periodo = searchParams.get('periodo') || '';
+  const diaInicio = searchParams.get('diaInicio') || '1';
+  
+  // Construir queryString para preservar filtros
+  const queryString = new URLSearchParams({
+    periodo,
+    diaInicio,
+  }).toString();
+
+  return (
+    <div>
+      {/* ✅ CORRETO: Link preserva parâmetros */}
+      <Link href={`/?${queryString}`}>Voltar ao Dashboard</Link>
+    </div>
+  );
+}
+```
+
+**Cenário 2 - Páginas SEM filtros (tags, importar, etc):**
+
+Use `router.back()` para voltar à página anterior preservando TODO o estado:
+
+```typescript
+'use client';
+
+import { useRouter } from 'next/navigation';
+
+export default function PaginaSemFiltros() {
+  const router = useRouter();
+
+  return (
+    <div>
+      {/* ✅ CORRETO: Usa histórico do navegador */}
+      <button onClick={() => router.back()}>← Voltar</button>
+      
+      {/* ❌ ERRADO: Link direto perde estado da página anterior */}
+      <Link href="/">Voltar</Link>
+    </div>
+  );
+}
+```
+
+**Aplicação por página**:
+- [src/app/categoria/[nome]/page.tsx](src/app/categoria/[nome]/page.tsx) ✅ Preserva searchParams (tem filtros)
+- [src/app/tags/page.tsx](src/app/tags/page.tsx) ✅ Usa router.back() (sem filtros)
+- [src/app/importar/page.tsx](src/app/importar/page.tsx) → Deve usar router.back() (sem filtros)
+
 ### 2. Serviços de API
 
 - Centralize todas as chamadas à API em `services/api.service.ts`

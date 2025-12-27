@@ -14,13 +14,16 @@ export default function BotaoVoltarDashboard({
 }: BotaoVoltarDashboardProps) {
   const searchParams = useSearchParams();
   
-  // Preserva período e diaInicio nos query params
+  // Preserva período, diaInicio e tags nos query params
   const queryParams = new URLSearchParams();
   if (searchParams.get('periodo')) {
     queryParams.set('periodo', searchParams.get('periodo')!);
   }
   if (searchParams.get('diaInicio')) {
     queryParams.set('diaInicio', searchParams.get('diaInicio')!);
+  }
+  if (searchParams.get('tags')) {
+    queryParams.set('tags', searchParams.get('tags')!);
   }
   
   const queryString = queryParams.toString();

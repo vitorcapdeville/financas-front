@@ -2,6 +2,7 @@ import { transacoesServerService } from '@/services/api.server';
 import { formatarData, formatarMoeda } from '@/utils/format';
 import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
+import FiltroTags from '@/components/FiltroTags';
 import Link from 'next/link';
 import BotaoVoltarDashboard from '@/components/BotaoVoltarDashboard';
 
@@ -13,6 +14,7 @@ interface CategoriaPageProps {
     tipo?: 'entrada' | 'saida';
     periodo?: string;
     diaInicio?: string;
+    tags?: string;
   };
 }
 
@@ -22,10 +24,11 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
   const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período e diaInicio
+  // Constrói query string preservando período, diaInicio e tags
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  if (searchParams.tags) queryParams.set('tags', searchParams.tags);
   const queryString = queryParams.toString();
   
   // Busca transações do período atual
@@ -36,6 +39,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
       data_fim,
       categoria: categoria === 'Sem categoria' ? 'null' : categoria,
       tipo: tipo || undefined,
+      tags: searchParams.tags,
     });
   } catch (error) {
     console.error('Erro ao carregar transações:', error);
@@ -59,6 +63,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
         data_fim: periodoAnterior.data_fim,
         categoria: categoria === 'Sem categoria' ? 'null' : categoria,
         tipo: tipo || undefined,
+        tags: searchParams.tags,
       });
 
       const total = transacoesMes.reduce((sum, t) => sum + t.valor, 0);
@@ -96,6 +101,9 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
 
         {/* Filtro de Período */}
         <FiltrosPeriodo showDiaInicio={false} />
+
+        {/* Filtro de Tags */}
+        <FiltroTags />
 
         {/* Comparativo Mensal */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

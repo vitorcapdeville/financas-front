@@ -2,12 +2,14 @@ import { transacoesServerService } from '@/services/api.server';
 import { formatarMoeda } from '@/utils/format';
 import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
+import FiltroTags from '@/components/FiltroTags';
 import Link from 'next/link';
 
 interface HomeProps {
   searchParams: {
     periodo?: string;
     diaInicio?: string;
+    tags?: string;
   };
 }
 
@@ -16,16 +18,23 @@ export default async function Home(props: HomeProps) {
   const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período e diaInicio
+  // Constrói query string preservando período, diaInicio e tags
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  if (searchParams.tags) queryParams.set('tags', searchParams.tags);
   const queryString = queryParams.toString();
   
   // Busca dados no servidor
   let resumo = null;
   try {
-    resumo = await transacoesServerService.resumoMensal(undefined, undefined, data_inicio, data_fim);
+    resumo = await transacoesServerService.resumoMensal(
+      undefined, 
+      undefined, 
+      data_inicio, 
+      data_fim,
+      searchParams.tags
+    );
   } catch (error) {
     console.error('Erro ao carregar resumo:', error);
   }
@@ -44,6 +53,9 @@ export default async function Home(props: HomeProps) {
 
         {/* Seletor de Período - Client Component */}
         <FiltrosPeriodo showDiaInicio={true} />
+
+        {/* Filtro de Tags */}
+        <FiltroTags />
 
         {/* Resumo */}
         {!resumo ? (
@@ -166,7 +178,7 @@ export default async function Home(props: HomeProps) {
         )}
 
         {/* Links de Navegação */}
-        <div className="mt-8 flex gap-4">
+        <div className="mt-8 flex gap-4 flex-wrap">
           <Link
             href={`/transacoes?${queryString}`}
             className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
@@ -178,6 +190,12 @@ export default async function Home(props: HomeProps) {
             className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
           >
             Importar Dados
+          </Link>
+          <Link
+            href="/tags"
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+          >
+            Gerenciar Tags
           </Link>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { Transacao, TransacaoCreate, TransacaoUpdate, ResumoMensal } from '@/types';
+import { Transacao, TransacaoCreate, TransacaoUpdate, ResumoMensal, Tag, TagCreate, TagUpdate } from '@/types';
 
 export const transacoesService = {
   async listar(params?: {
@@ -9,6 +9,7 @@ export const transacoesService = {
     data_fim?: string;
     categoria?: string;
     tipo?: string;
+    tags?: string; // IDs separados por vírgula
   }): Promise<Transacao[]> {
     const { data } = await api.get('/transacoes', { params });
     return data;
@@ -56,6 +57,19 @@ export const transacoesService = {
     const { data } = await api.get('/transacoes/resumo/mensal', { params });
     return data;
   },
+  
+  async listarTags(transacaoId: number): Promise<Tag[]> {
+    const { data } = await api.get(`/transacoes/${transacaoId}/tags`);
+    return data;
+  },
+
+  async adicionarTag(transacaoId: number, tagId: number): Promise<void> {
+    await api.post(`/transacoes/${transacaoId}/tags/${tagId}`);
+  },
+
+  async removerTag(transacaoId: number, tagId: number): Promise<void> {
+    await api.delete(`/transacoes/${transacaoId}/tags/${tagId}`);
+  },
 };
 
 export const importacaoService = {
@@ -87,5 +101,31 @@ export const configuracoesService = {
   async salvar(chave: string, valor: string): Promise<{ chave: string; valor: string }> {
     const { data } = await api.post('/configuracoes/', { chave, valor });
     return data;
+  },
+};
+
+export const tagsService = {
+  async listar(): Promise<Tag[]> {
+    const { data } = await api.get('/tags');
+    return data;
+  },
+
+  async obter(id: number): Promise<Tag> {
+    const { data } = await api.get(`/tags/${id}`);
+    return data;
+  },
+
+  async criar(tag: TagCreate): Promise<Tag> {
+    const { data } = await api.post('/tags', tag);
+    return data;
+  },
+
+  async atualizar(id: number, tag: TagUpdate): Promise<Tag> {
+    const { data } = await api.patch(`/tags/${id}`, tag);
+    return data;
+  },
+
+  async deletar(id: number): Promise<void> {
+    await api.delete(`/tags/${id}`);
   },
 };

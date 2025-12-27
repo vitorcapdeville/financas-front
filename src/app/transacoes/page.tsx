@@ -2,6 +2,7 @@ import { transacoesServerService } from '@/services/api.server';
 import { formatarData, formatarMoeda } from '@/utils/format';
 import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
+import FiltroTags from '@/components/FiltroTags';
 import Link from 'next/link';
 import BotaoVoltarDashboard from '@/components/BotaoVoltarDashboard';
 
@@ -9,6 +10,7 @@ interface TransacoesPageProps {
   searchParams: {
     periodo?: string;
     diaInicio?: string;
+    tags?: string;
   };
 }
 
@@ -16,16 +18,21 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
   const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período e diaInicio
+  // Constrói query string preservando período, diaInicio e tags
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  if (searchParams.tags) queryParams.set('tags', searchParams.tags);
   const queryString = queryParams.toString();
   
   // Busca transações no servidor
   let transacoes;
   try {
-    transacoes = await transacoesServerService.listar({ data_inicio, data_fim });
+    transacoes = await transacoesServerService.listar({ 
+      data_inicio, 
+      data_fim,
+      tags: searchParams.tags
+    });
   } catch (error) {
     console.error('Erro ao carregar transações:', error);
     transacoes = [];
@@ -50,6 +57,9 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
             <BotaoVoltarDashboard />
           </div>
         </div>
+
+        {/* Filtro de Tags */}
+        <FiltroTags />
 
         {/* Lista de Transações */}
         {transacoes.length === 0 ? (
@@ -123,6 +133,20 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
                             : 'Fatura'}
                         </span>
                       </div>
+                      {/* Tags */}
+                      {transacao.tags && transacao.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {transacao.tags.map((tag) => (
+                            <span
+                              key={tag.id}
+                              className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                              style={{ backgroundColor: tag.cor || '#3B82F6' }}
+                            >
+                              {tag.nome}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right ml-4">
                       <p
