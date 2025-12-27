@@ -1,71 +1,34 @@
-'use client';
+import { transacoesServerService } from '@/services/api.server';
+import { formatarMoeda } from '@/utils/format';
+import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
+import FiltrosPeriodo from '@/components/FiltrosPeriodo';
+import Link from 'next/link';
 
-import { useState, useEffect } from 'react';
-import { transacoesService, configuracoesService } from '@/services/api.service';
-import { ResumoMensal } from '@/types';
-import { formatarMes, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
-import { usePeriodo } from '@/hooks/usePeriodo';
-
-export default function Home() {
-  const { periodo, setPeriodo, diaInicio, setDiaInicio } = usePeriodo();
-  const [resumo, setResumo] = useState<ResumoMensal | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const mes = parseInt(periodo.split('-')[1]);
-  const ano = parseInt(periodo.split('-')[0]);
-
-  // Carrega dia de início do banco de dados
-  useEffect(() => {
-    const carregarDiaInicio = async () => {
-      try {
-        const config = await configuracoesService.obter('diaInicioPeriodo');
-        if (config.valor) {
-          setDiaInicio(parseInt(config.valor));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configuração:', error);
-      }
-    };
-    carregarDiaInicio();
-  }, []);
-
-  // Salva dia de início no banco de dados
-  const handleDiaInicioChange = async (novoDia: number) => {
-    setDiaInicio(novoDia);
-    try {
-      await configuracoesService.salvar('diaInicioPeriodo', novoDia.toString());
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-    }
+interface HomeProps {
+  searchParams: {
+    periodo?: string;
+    diaInicio?: string;
   };
+}
 
-  // Calcula as datas de início e fim baseado no dia configurado
-  const calcularPeriodo = () => {
-    const dataInicioCalc = new Date(ano, mes - 1, diaInicio);
-    const dataFimCalc = new Date(ano, mes, diaInicio - 1);
-    
-    return {
-      data_inicio: dataInicioCalc.toISOString().split('T')[0],
-      data_fim: dataFimCalc.toISOString().split('T')[0]
-    };
-  };
-
-  useEffect(() => {
-    carregarResumo();
-  }, [periodo, diaInicio]);
-
-  const carregarResumo = async () => {
-    try {
-      setLoading(true);
-      const { data_inicio, data_fim } = calcularPeriodo();
-      const data = await transacoesService.resumoMensal(undefined, undefined, data_inicio, data_fim);
-      setResumo(data);
-    } catch (error) {
-      console.error('Erro ao carregar resumo:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function Home(props: HomeProps) {
+  const { searchParams } = props;
+  const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
+  const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
+  
+  // Constrói query string preservando período e diaInicio
+  const queryParams = new URLSearchParams();
+  if (periodo) queryParams.set('periodo', periodo);
+  if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  const queryString = queryParams.toString();
+  
+  // Busca dados no servidor
+  let resumo = null;
+  try {
+    resumo = await transacoesServerService.resumoMensal(undefined, undefined, data_inicio, data_fim);
+  } catch (error) {
+    console.error('Erro ao carregar resumo:', error);
+  }
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -79,53 +42,15 @@ export default function Home() {
           </p>
         </header>
 
-        {/* Seletor de Período */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Período
-              </label>
-              <input
-                type="month"
-                value={periodo}
-                onChange={(e) => setPeriodo(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Dia de Início do Período
-              </label>
-              <select
-                value={diaInicio}
-                onChange={(e) => handleDiaInicioChange(parseInt(e.target.value))}
-                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                  <option key={dia} value={dia}>
-                    Dia {dia}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <div className="text-sm text-gray-500 mt-6">
-                Visualizando: <span className="font-semibold text-gray-900">
-                  {new Date(ano, mes - 1, diaInicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} até {' '}
-                  {new Date(ano, mes, diaInicio - 1).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Seletor de Período - Client Component */}
+        <FiltrosPeriodo showDiaInicio={true} />
 
         {/* Resumo */}
-        {loading ? (
+        {!resumo ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Carregando...</p>
+            <p className="text-gray-500">Nenhum dado disponível</p>
           </div>
-        ) : resumo ? (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Card Entradas */}
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -161,10 +86,6 @@ export default function Home() {
               </p>
             </div>
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Nenhum dado disponível</p>
-          </div>
         )}
 
         {/* Categorias */}
@@ -183,15 +104,15 @@ export default function Home() {
                         key={categoria}
                         className="flex justify-between items-center py-2 border-b border-gray-100 hover:bg-gray-50 transition-colors group"
                       >
-                        <a
-                          href={`/categoria/${encodeURIComponent(categoria)}?tipo=entrada`}
+                        <Link
+                          href={`/categoria/${encodeURIComponent(categoria)}?tipo=entrada&${queryString}`}
                           className="text-gray-700 hover:text-green-600 font-medium flex items-center gap-2 flex-1"
                         >
                           {categoria}
                           <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
                             →
                           </span>
-                        </a>
+                        </Link>
                         <span className="font-semibold text-green-600">
                           {formatarMoeda(valor)}
                         </span>
@@ -219,15 +140,15 @@ export default function Home() {
                         key={categoria}
                         className="flex justify-between items-center py-2 border-b border-gray-100 hover:bg-gray-50 transition-colors group"
                       >
-                        <a
-                          href={`/categoria/${encodeURIComponent(categoria)}?tipo=saida`}
+                        <Link
+                          href={`/categoria/${encodeURIComponent(categoria)}?tipo=saida&${queryString}`}
                           className="text-gray-700 hover:text-red-600 font-medium flex items-center gap-2 flex-1"
                         >
                           {categoria}
                           <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
                             →
                           </span>
-                        </a>
+                        </Link>
                         <span className="font-semibold text-red-600">
                           {formatarMoeda(valor)}
                         </span>
@@ -246,18 +167,18 @@ export default function Home() {
 
         {/* Links de Navegação */}
         <div className="mt-8 flex gap-4">
-          <a
-            href="/transacoes"
+          <Link
+            href={`/transacoes?${queryString}`}
             className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             Ver Todas as Transações
-          </a>
-          <a
+          </Link>
+          <Link
             href="/importar"
             className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
           >
             Importar Dados
-          </a>
+          </Link>
         </div>
       </div>
     </main>

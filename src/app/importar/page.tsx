@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { importacaoService } from '@/services/api.service';
 import { toast } from 'react-hot-toast';
 
@@ -137,12 +138,12 @@ export default function ImportarPage() {
 
         {/* Botão Voltar */}
         <div className="mt-8">
-          <a
+          <Link
             href="/"
             className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
           >
             ← Voltar ao Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </main>

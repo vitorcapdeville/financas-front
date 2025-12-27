@@ -1,71 +1,34 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { transacoesService } from '@/services/api.service';
-import { Transacao } from '@/types';
+import { transacoesServerService } from '@/services/api.server';
 import { formatarData, formatarMoeda } from '@/utils/format';
-import { toast } from 'react-hot-toast';
-import ModalEditarCategoria from '@/components/ModalEditarCategoria';
-import ModalEditarValor from '@/components/ModalEditarValor';
+import Link from 'next/link';
+import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
 
-export default function TransacaoPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = parseInt(params.id as string);
-
-  const [transacao, setTransacao] = useState<Transacao | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [modalCategoria, setModalCategoria] = useState(false);
-  const [modalValor, setModalValor] = useState(false);
-
-  useEffect(() => {
-    carregarTransacao();
-  }, [id]);
-
-  const carregarTransacao = async () => {
-    try {
-      setLoading(true);
-      const data = await transacoesService.obter(id);
-      setTransacao(data);
-    } catch (error) {
-      console.error('Erro ao carregar transação:', error);
-      toast.error('Erro ao carregar transação');
-    } finally {
-      setLoading(false);
-    }
+interface TransacaoPageProps {
+  params: {
+    id: string;
   };
-
-  const handleSalvarCategoria = async (novaCategoria: string) => {
-    try {
-      await transacoesService.atualizar(id, { categoria: novaCategoria });
-      toast.success('Categoria atualizada!');
-      setModalCategoria(false);
-      carregarTransacao();
-    } catch (error) {
-      console.error('Erro ao atualizar categoria:', error);
-      toast.error('Erro ao atualizar categoria');
-    }
+  searchParams: {
+    periodo?: string;
+    diaInicio?: string;
   };
+}
 
-  const handleSalvarValor = async (novoValor: number) => {
-    try {
-      await transacoesService.atualizar(id, { valor: novoValor });
-      toast.success('Valor atualizado!');
-      setModalValor(false);
-      carregarTransacao();
-    } catch (error) {
-      console.error('Erro ao atualizar valor:', error);
-      toast.error('Erro ao atualizar valor');
-    }
-  };
-
-  if (loading) {
-    return (
-      <main className="min-h-screen p-8 bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Carregando...</p>
-      </main>
-    );
+export default async function TransacaoPage({ params, searchParams }: TransacaoPageProps) {
+  const id = parseInt(params.id);
+  
+  // Constrói query string preservando período e diaInicio
+  const queryParams = new URLSearchParams();
+  if (searchParams.periodo) queryParams.set('periodo', searchParams.periodo);
+  if (searchParams.diaInicio) queryParams.set('diaInicio', searchParams.diaInicio);
+  const queryString = queryParams.toString();
+  
+  // Busca transação no servidor
+  let transacao;
+  try {
+    transacao = await transacoesServerService.obter(id);
+  } catch (error) {
+    console.error('Erro ao carregar transação:', error);
+    transacao = null;
   }
 
   if (!transacao) {
@@ -73,12 +36,12 @@ export default function TransacaoPage() {
       <main className="min-h-screen p-8 bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-500 text-lg mb-4">Transação não encontrada</p>
-          <a
-            href="/transacoes"
+          <Link
+            href={`/transacoes?${queryString}`}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
             ← Voltar para transações
-          </a>
+          </Link>
         </div>
       </main>
     );
@@ -89,12 +52,12 @@ export default function TransacaoPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4 cursor-pointer"
+          <Link
+            href={`/transacoes?${queryString}`}
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
             ← Voltar
-          </button>
+          </Link>
           <h1 className="text-4xl font-bold text-gray-900">
             Detalhes da Transação
           </h1>
@@ -161,12 +124,6 @@ export default function TransacaoPage() {
                 <span className="px-4 py-2 bg-gray-100 rounded-lg text-lg text-gray-900">
                   {transacao.categoria || 'Sem categoria'}
                 </span>
-                <button
-                  onClick={() => setModalCategoria(true)}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  ✏️ Alterar
-                </button>
               </div>
             </div>
 
@@ -192,43 +149,9 @@ export default function TransacaoPage() {
           </div>
         </div>
 
-        {/* Ações */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Ações</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => setModalCategoria(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-            >
-              📁 Alterar Categoria
-            </button>
-            <button
-              onClick={() => setModalValor(true)}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-            >
-              💰 Alterar Valor
-            </button>
-          </div>
-        </div>
+        {/* Ações - Client Component */}
+        <BotoesAcaoTransacao transacao={transacao} />
       </div>
-
-      {/* Modais */}
-      {transacao && (
-        <>
-          <ModalEditarCategoria
-            isOpen={modalCategoria}
-            onClose={() => setModalCategoria(false)}
-            categoriaAtual={transacao.categoria || ''}
-            onSalvar={handleSalvarCategoria}
-          />
-          <ModalEditarValor
-            isOpen={modalValor}
-            onClose={() => setModalValor(false)}
-            valorAtual={transacao.valor}
-            onSalvar={handleSalvarValor}
-          />
-        </>
-      )}
     </main>
   );
 }

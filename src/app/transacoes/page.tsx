@@ -1,73 +1,34 @@
-'use client';
+import { transacoesServerService } from '@/services/api.server';
+import { formatarData, formatarMoeda } from '@/utils/format';
+import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
+import FiltrosPeriodo from '@/components/FiltrosPeriodo';
+import Link from 'next/link';
 
-import { useState, useEffect } from 'react';
-import { transacoesService, configuracoesService } from '@/services/api.service';
-import { Transacao } from '@/types';
-import { formatarData, formatarMoeda, obterMesAtual, obterAnoAtual } from '@/utils/format';
-import { toast } from 'react-hot-toast';
-import { usePeriodo } from '@/hooks/usePeriodo';
-
-export default function TransacoesPage() {
-  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { periodo, setPeriodo, diaInicio, setDiaInicio } = usePeriodo();
-
-  const mes = parseInt(periodo.split('-')[1]);
-  const ano = parseInt(periodo.split('-')[0]);
-
-  // Carrega dia de início do banco de dados
-  useEffect(() => {
-    const carregarDiaInicio = async () => {
-      try {
-        const config = await configuracoesService.obter('diaInicioPeriodo');
-        if (config.valor) {
-          setDiaInicio(parseInt(config.valor));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configuração:', error);
-      }
-    };
-    carregarDiaInicio();
-  }, []);
-
-  // Salva dia de início no banco de dados
-  const handleDiaInicioChange = async (novoDia: number) => {
-    setDiaInicio(novoDia);
-    try {
-      await configuracoesService.salvar('diaInicioPeriodo', novoDia.toString());
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-    }
+interface TransacoesPageProps {
+  searchParams: {
+    periodo?: string;
+    diaInicio?: string;
   };
+}
 
-  // Calcula as datas de início e fim baseado no dia configurado
-  const calcularPeriodo = () => {
-    const dataInicioCalc = new Date(ano, mes - 1, diaInicio);
-    const dataFimCalc = new Date(ano, mes, diaInicio - 1);
-    
-    return {
-      data_inicio: dataInicioCalc.toISOString().split('T')[0],
-      data_fim: dataFimCalc.toISOString().split('T')[0]
-    };
-  };
-
-  useEffect(() => {
-    carregarTransacoes();
-  }, [periodo, diaInicio]);
-
-  const carregarTransacoes = async () => {
-    try {
-      setLoading(true);
-      const { data_inicio, data_fim } = calcularPeriodo();
-      const data = await transacoesService.listar({ data_inicio, data_fim });
-      setTransacoes(data);
-    } catch (error) {
-      console.error('Erro ao carregar transações:', error);
-      toast.error('Erro ao carregar transações');
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function TransacoesPage({ searchParams }: TransacoesPageProps) {
+  const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
+  const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
+  
+  // Constrói query string preservando período e diaInicio
+  const queryParams = new URLSearchParams();
+  if (periodo) queryParams.set('periodo', periodo);
+  if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  const queryString = queryParams.toString();
+  
+  // Busca transações no servidor
+  let transacoes;
+  try {
+    transacoes = await transacoesServerService.listar({ data_inicio, data_fim });
+  } catch (error) {
+    console.error('Erro ao carregar transações:', error);
+    transacoes = [];
+  }
 
   return (
     <main className="min-h-screen p-8 bg-gray-50">
@@ -82,70 +43,30 @@ export default function TransacoesPage() {
         </header>
 
         {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Período
-              </label>
-              <input
-                type="month"
-                value={periodo}
-                onChange={(e) => setPeriodo(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Dia de Início do Período
-              </label>
-              <select
-                value={diaInicio}
-                onChange={(e) => handleDiaInicioChange(parseInt(e.target.value))}
-                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                  <option key={dia} value={dia}>
-                    Dia {dia}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <div className="text-sm text-gray-500 mt-6">
-                Exibindo: <span className="font-semibold text-gray-900">
-                  {new Date(ano, mes - 1, diaInicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} até {' '}
-                  {new Date(ano, mes, diaInicio - 1).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-            </div>
-            <div className="ml-auto mt-6">
-              <a
-                href="/"
-                className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-              >
-                ← Voltar
-              </a>
-            </div>
+        <div className="mb-4">
+          <FiltrosPeriodo showDiaInicio={true} />
+          <div className="flex justify-end -mt-4">
+            <Link
+              href={`/?${queryString}`}
+              className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+            >
+              ← Voltar
+            </Link>
           </div>
         </div>
 
         {/* Lista de Transações */}
-        {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Carregando...</p>
-          </div>
-        ) : transacoes.length === 0 ? (
+        {transacoes.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <p className="text-gray-500 text-lg mb-4">
               Nenhuma transação encontrada
             </p>
-            <a
+            <Link
               href="/importar"
               className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
             >
               Importar Dados
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -156,9 +77,9 @@ export default function TransacoesPage() {
             </div>
             <div className="divide-y divide-gray-200">
               {transacoes.map((transacao) => (
-                <a
+                <Link
                   key={transacao.id}
-                  href={`/transacao/${transacao.id}`}
+                  href={`/transacao/${transacao.id}?${queryString}`}
                   className="block p-6 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex justify-between items-start">
@@ -206,7 +127,7 @@ export default function TransacoesPage() {
                       </p>
                     </div>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
 
