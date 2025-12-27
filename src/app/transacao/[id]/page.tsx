@@ -2,6 +2,7 @@ import { transacoesServerService } from '@/services/api.server';
 import { formatarData, formatarMoeda } from '@/utils/format';
 import Link from 'next/link';
 import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
+import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface TransacaoPageProps {
   params: {
@@ -52,12 +53,9 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Link
-            href={`/transacoes?${queryString}`}
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            ← Voltar
-          </Link>
+          <div className="mb-4">
+            <BotaoVoltar />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900">
             Detalhes da Transação
           </h1>
@@ -95,12 +93,23 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Data
+                  Data da Transação
                 </label>
                 <p className="text-lg text-gray-900">
                   {formatarData(transacao.data)}
                 </p>
               </div>
+
+              {transacao.data_fatura ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Data da Fatura
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {formatarData(transacao.data_fatura)}
+                  </p>
+                </div>
+              ) : null}
 
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">

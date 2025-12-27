@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { importacaoService } from '@/services/api.service';
 import { toast } from 'react-hot-toast';
+import BotaoVoltar from '@/components/BotaoVoltar';
 
 export default function ImportarPage() {
   const [uploading, setUploading] = useState(false);
@@ -102,7 +103,8 @@ export default function ImportarPage() {
               <p className="text-sm text-gray-500 mb-2">
                 • Data: DD/MM/YYYY ou YYYY-MM-DD <br />
                 • Valor: sempre positivo (representa saída) <br />
-                • Categoria (opcional)
+                • Categoria (opcional) <br />
+                • Data_fatura (opcional): data de fechamento/pagamento
               </p>
             </div>
             <label className="block">
@@ -131,19 +133,17 @@ export default function ImportarPage() {
           <ul className="text-blue-800 text-sm space-y-1">
             <li>• Formatos aceitos: CSV, XLSX, XLS</li>
             <li>• Colunas obrigatórias: data, descricao, valor</li>
-            <li>• Coluna opcional: categoria</li>
+            <li>• Colunas opcionais: categoria, data_fatura (apenas faturas)</li>
+            <li>• data_fatura: define quando a fatura foi/será paga (para visualização por data de pagamento)</li>
             <li>• As transações importadas aparecerão no dashboard</li>
           </ul>
         </div>
 
         {/* Botão Voltar */}
         <div className="mt-8">
-          <Link
-            href="/"
-            className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-          >
-            ← Voltar ao Dashboard
-          </Link>
+          <BotaoVoltar className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+            ← Voltar
+          </BotaoVoltar>
         </div>
       </div>
     </main>

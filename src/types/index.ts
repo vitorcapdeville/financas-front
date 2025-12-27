@@ -12,6 +12,7 @@ export interface Transacao {
   categoria?: string;
   origem: string;
   observacoes?: string;
+  data_fatura?: string; // Data de fechamento/pagamento da fatura
   criado_em: string;
   atualizado_em: string;
 }
@@ -24,6 +25,7 @@ export interface TransacaoCreate {
   categoria?: string;
   origem?: string;
   observacoes?: string;
+  data_fatura?: string;
 }
 
 export interface TransacaoUpdate {
@@ -33,6 +35,7 @@ export interface TransacaoUpdate {
   tipo?: TipoTransacao;
   categoria?: string;
   observacoes?: string;
+  data_fatura?: string;
 }
 
 export interface ResumoMensal {
@@ -43,4 +46,9 @@ export interface ResumoMensal {
   saldo: number;
   entradas_por_categoria: Record<string, number>;
   saidas_por_categoria: Record<string, number>;
+}
+
+export enum CriterioDataTransacao {
+  DATA_TRANSACAO = 'data_transacao',
+  DATA_FATURA = 'data_fatura',
 }

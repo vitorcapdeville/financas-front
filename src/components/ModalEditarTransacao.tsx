@@ -19,6 +19,7 @@ export default function ModalEditarTransacao({
   const [formData, setFormData] = useState<TransacaoUpdate>({
     valor: transacao.valor,
     categoria: transacao.categoria || '',
+    data_fatura: transacao.data_fatura || '',
   });
   const [salvando, setSalvando] = useState(false);
 
@@ -26,6 +27,7 @@ export default function ModalEditarTransacao({
     setFormData({
       valor: transacao.valor,
       categoria: transacao.categoria || '',
+      data_fatura: transacao.data_fatura || '',
     });
   }, [transacao]);
 
@@ -100,6 +102,23 @@ export default function ModalEditarTransacao({
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data da Fatura (Opcional)
+              </label>
+              <input
+                type="date"
+                value={formData.data_fatura || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, data_fatura: e.target.value || undefined })
+                }
+                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Data de fechamento/pagamento da fatura (para compras no cartão)
+              </p>
+            </div>
+
             <div className="bg-gray-50 rounded-md p-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Tipo:</span>
@@ -114,11 +133,19 @@ export default function ModalEditarTransacao({
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-gray-600">Data:</span>
+                <span className="text-gray-600">Data da Transação:</span>
                 <span className="text-gray-900">
                   {new Date(transacao.data).toLocaleDateString('pt-BR')}
                 </span>
               </div>
+              {transacao.data_fatura && (
+                <div className="flex items-center justify-between text-sm mt-2">
+                  <span className="text-gray-600">Data da Fatura:</span>
+                  <span className="text-gray-900">
+                    {new Date(transacao.data_fatura).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

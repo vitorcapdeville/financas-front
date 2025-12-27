@@ -3,6 +3,7 @@ import { formatarData, formatarMoeda } from '@/utils/format';
 import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
 import Link from 'next/link';
+import BotaoVoltarDashboard from '@/components/BotaoVoltarDashboard';
 
 interface CategoriaPageProps {
   params: {
@@ -33,7 +34,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
     transacoes = await transacoesServerService.listar({
       data_inicio,
       data_fim,
-      categoria: categoria === 'Sem categoria' ? undefined : categoria,
+      categoria: categoria === 'Sem categoria' ? 'null' : categoria,
       tipo: tipo || undefined,
     });
   } catch (error) {
@@ -56,7 +57,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
       const transacoesMes = await transacoesServerService.listar({
         data_inicio: periodoAnterior.data_inicio,
         data_fim: periodoAnterior.data_fim,
-        categoria: categoria === 'Sem categoria' ? undefined : categoria,
+        categoria: categoria === 'Sem categoria' ? 'null' : categoria,
         tipo: tipo || undefined,
       });
 
@@ -82,12 +83,9 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Link
-            href={`/?${queryString}`}
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            ← Voltar ao Dashboard
-          </Link>
+          <div className="mb-4">
+            <BotaoVoltarDashboard className="inline-flex items-center text-gray-600 hover:text-gray-900" />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             {categoria}
           </h1>

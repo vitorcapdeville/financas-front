@@ -3,6 +3,7 @@ import { formatarData, formatarMoeda } from '@/utils/format';
 import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
 import Link from 'next/link';
+import BotaoVoltarDashboard from '@/components/BotaoVoltarDashboard';
 
 interface TransacoesPageProps {
   searchParams: {
@@ -46,12 +47,7 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
         <div className="mb-4">
           <FiltrosPeriodo showDiaInicio={true} />
           <div className="flex justify-end -mt-4">
-            <Link
-              href={`/?${queryString}`}
-              className="inline-block bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-            >
-              ← Voltar
-            </Link>
+            <BotaoVoltarDashboard />
           </div>
         </div>
 
@@ -99,7 +95,21 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>{formatarData(transacao.data)}</span>
+                        <span>
+                          <span className="font-medium text-xs text-gray-400">
+                            {transacao.data_fatura ? 'Transação:' : ''}
+                          </span>{' '}
+                          {formatarData(transacao.data)}
+                        </span>
+                        {transacao.data_fatura && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              <span className="font-medium text-xs text-gray-400">Fatura:</span>{' '}
+                              {formatarData(transacao.data_fatura)}
+                            </span>
+                          </>
+                        )}
                         <span>•</span>
                         <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700">
                           {transacao.categoria || 'Sem categoria'}
