@@ -8,6 +8,7 @@ export interface Transacao {
   data: string;
   descricao: string;
   valor: number;
+  valor_original?: number; // Valor original antes de edições
   tipo: TipoTransacao;
   categoria?: string;
   origem: string;

@@ -6,14 +6,18 @@ interface ModalEditarValorProps {
   isOpen: boolean;
   onClose: () => void;
   valorAtual: number;
+  valorOriginal?: number; // Valor original antes de edições
   onSalvar: (novoValor: number) => Promise<void>;
+  onRestaurar?: () => Promise<void>; // Callback para restaurar valor original
 }
 
 export default function ModalEditarValor({
   isOpen,
   onClose,
   valorAtual,
+  valorOriginal,
   onSalvar,
+  onRestaurar,
 }: ModalEditarValorProps) {
   const [valor, setValor] = useState(valorAtual);
   const [salvando, setSalvando] = useState(false);
@@ -21,7 +25,9 @@ export default function ModalEditarValor({
   if (!isOpen) return null;
 
   const aplicarPercentual = (percentual: number) => {
-    const novoValor = (valorAtual * percentual) / 100;
+    // Usa valor original se disponível, senão usa valor atual
+    const baseValor = valorOriginal ?? valorAtual;
+    const novoValor = (baseValor * percentual) / 100;
     setValor(Number(novoValor.toFixed(2)));
   };
 
@@ -31,6 +37,17 @@ export default function ModalEditarValor({
     setSalvando(true);
     try {
       await onSalvar(valor);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleRestaurar = async () => {
+    if (!onRestaurar) return;
+    
+    setSalvando(true);
+    try {
+      await onRestaurar();
     } finally {
       setSalvando(false);
     }
@@ -49,6 +66,9 @@ export default function ModalEditarValor({
     }).format(valor);
   };
 
+  const baseValor = valorOriginal ?? valorAtual;
+  const foiEditado = valorOriginal !== undefined && valorOriginal !== valorAtual;
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -57,9 +77,28 @@ export default function ModalEditarValor({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Alterar Valor</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Valor atual: {formatarMoeda(valorAtual)}
-          </p>
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-gray-500">
+              Valor atual: {formatarMoeda(valorAtual)}
+            </p>
+            {foiEditado && valorOriginal && (
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-amber-600">
+                  Valor original: {formatarMoeda(valorOriginal)}
+                </p>
+                {onRestaurar && (
+                  <button
+                    type="button"
+                    onClick={handleRestaurar}
+                    className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded hover:bg-amber-200 transition-colors"
+                    disabled={salvando}
+                  >
+                    Restaurar
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
@@ -123,12 +162,12 @@ export default function ModalEditarValor({
                 >
                   100%
                   <span className="block text-xs mt-1">
-                    {formatarMoeda(valorAtual)}
+                    {formatarMoeda(baseValor)}
                   </span>
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                0% = Desativar transação (valor zerado) | 50% = Metade | 100% = Valor original
+                0% = Desativar transação (valor zerado) | 50% = Metade | 100% = Valor {foiEditado ? 'original' : 'atual'}
               </p>
             </div>
 

@@ -41,6 +41,18 @@ export default function BotoesAcaoTransacao({ transacao }: BotoesAcaoTransacaoPr
     }
   };
 
+  const handleRestaurarValor = async () => {
+    try {
+      await transacoesService.restaurarValorOriginal(transacao.id);
+      toast.success('Valor original restaurado!');
+      setModalValor(false);
+      router.refresh(); // Revalida dados do servidor
+    } catch (error) {
+      console.error('Erro ao restaurar valor:', error);
+      toast.error('Erro ao restaurar valor original');
+    }
+  };
+
   return (
     <>
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -73,7 +85,9 @@ export default function BotoesAcaoTransacao({ transacao }: BotoesAcaoTransacaoPr
         isOpen={modalValor}
         onClose={() => setModalValor(false)}
         valorAtual={transacao.valor}
+        valorOriginal={transacao.valor_original}
         onSalvar={handleSalvarValor}
+        onRestaurar={transacao.valor_original !== undefined ? handleRestaurarValor : undefined}
       />
     </>
   );

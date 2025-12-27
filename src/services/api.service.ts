@@ -29,6 +29,11 @@ export const transacoesService = {
     return data;
   },
 
+  async restaurarValorOriginal(id: number): Promise<Transacao> {
+    const { data } = await api.post(`/transacoes/${id}/restaurar-valor`);
+    return data;
+  },
+
   async listarCategorias(): Promise<string[]> {
     const { data } = await api.get('/transacoes/categorias');
     return data;
