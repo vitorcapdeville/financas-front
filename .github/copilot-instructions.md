@@ -17,6 +17,8 @@ Este é o frontend de uma aplicação de gerenciamento de finanças pessoais, co
 - **Date handling**: Frontend calcula `data_inicio/data_fim` baseado em dia customizado e envia para API (prioridade sobre mes/ano)
 - **Type safety**: Interfaces TypeScript em `types/index.ts` espelham modelos backend (Pydantic schemas)
 - **API base URL**: Configurável via `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000`)
+- **State persistence**: Hook `usePeriodo` em `hooks/usePeriodo.ts` gerencia período e dia de início usando localStorage para persistência entre sessões
+- **SSR handling**: Sempre use `typeof window !== 'undefined'` antes de acessar localStorage para evitar erros de hidratação
 
 ## Objetivo
 
@@ -84,23 +86,68 @@ interface ResumoMensal {
 
 ### 1. Componentes
 
-- Use **"use client"** para componentes com estado ou hooks
-- Prefira componentes funcionais com hooks
-- Use TypeScript para props
-- Extraia lógica complexa em hooks customizados
+**PRIORIDADE: Server Components**
+
+- **Sempre prefira Server Components** ao invés de Client Components
+- Use Server Components por padrão - só adicione `"use client"` quando estritamente necessário
+- Client Components são necessários apenas para: hooks de estado, event handlers, browser APIs, useEffect
+- Server Components reduzem bundle size e melhoram performance
+
+**PRIORIDADE: Estado na URL**
+
+- **Sempre prefira gerenciar estado através de URL params/searchParams** ao invés de useState
+- Estado na URL permite compartilhamento de links e bookmarks preservando o estado da aplicação
+- Use `searchParams` em Server Components ou `useSearchParams` + `useRouter` em Client Components
+- useState é permitido apenas para estado efêmero de UI (modais abertos, campos de formulário, etc)
 
 ```typescript
-'use client';
-
-interface Props {
-  titulo: string;
-  onSalvar: (data: FormData) => void;
+// ✅ PREFERIDO: Server Component com estado na URL
+interface PageProps {
+  searchParams: { categoria?: string; mes?: string; ano?: string };
 }
 
-export default function MeuComponente({ titulo, onSalvar }: Props) {
+export default async function TransacoesPage({ searchParams }: PageProps) {
+  const transacoes = await transacoesService.listar({
+    categoria: searchParams.categoria,
+    mes: searchParams.mes ? parseInt(searchParams.mes) : undefined,
+    ano: searchParams.ano ? parseInt(searchParams.ano) : undefined,
+  });
+  
+  return <ListaTransacoes transacoes={transacoes} />;
+}
+
+// ✅ OK: Client Component quando necessário (filtros interativos)
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+
+export default function FiltrosTransacoes() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const handleFiltrar = (categoria: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('categoria', categoria);
+    router.push(`?${params.toString()}`);
+  };
+  
+  return <button onClick={() => handleFiltrar('alimentacao')}>Filtrar</button>;
+}
+
+// ❌ EVITAR: useState para estado que deveria estar na URL
+'use client';
+
+export default function TransacoesPage() {
+  const [categoria, setCategoria] = useState(''); // ❌ Não permite bookmark
   // ...
 }
 ```
+
+**Quando usar cada abordagem:**
+
+- **Server Component + URL params**: Filtros, paginação, ordenação, seleção de período
+- **Client Component + URL params**: Filtros interativos que precisam de feedback imediato
+- **useState**: Estado efêmero de UI (modal aberto, dropdown expandido, campo de input)
 
 ### 2. Serviços de API
 
@@ -178,6 +225,24 @@ const valorFormatado = formatarMoeda(1500.50); // "R$ 1.500,50"
 const dataFormatada = formatarData('2024-01-15'); // "15/01/2024"
 ```
 
+## Custom Hooks
+
+### usePeriodo (hooks/usePeriodo.ts)
+
+Gerencia o período selecionado e dia de início com persistência em localStorage:
+
+```typescript
+const { periodo, setPeriodo, diaInicio, setDiaInicio } = usePeriodo();
+
+// periodo: string no formato "YYYY-MM"
+// diaInicio: número de 1-31 indicando dia de início do mês
+```
+
+**Importante**: 
+- Sempre verifica `typeof window !== 'undefined'` antes de acessar localStorage
+- Valores são sincronizados automaticamente com localStorage via useEffect
+- Inicialização usa valores salvos ou defaults (mês atual, dia 1)
+
 ## Componentes Reutilizáveis
 
 Ao criar componentes, considere:
@@ -204,9 +269,28 @@ Ao criar componentes, considere:
 />
 ```
 
+## Configuração de Ambiente
+
+### Setup Inicial
+
+```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Configurar variáveis de ambiente
+cp .env.example .env
+```
+
+O arquivo `.env` deve conter:
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+**IMPORTANTE**: A API backend deve estar rodando em `http://localhost:8000` antes de iniciar o frontend.
+
 ## Comunicação com a API
 
-Base URL: `http://localhost:8000` (configurável via `.env`)
+Base URL: `http://localhost:8000` (configurável via `NEXT_PUBLIC_API_URL`)
 
 ### Endpoints Principais
 
@@ -344,51 +428,110 @@ BREAKING CHANGE: Pages Router não é mais suportado
 ## Boas Práticas
 
 1. **Sempre use TypeScript** - Tipagem previne bugs
-2. **Componentize** - Reutilize código
-3. **Separe lógica de UI** - Use hooks customizados
-4. **Feedback visual** - Loading, erros, sucesso
-5. **Validação** - Cliente e servidor
-6. **Mensagens claras** - Para o usuário
-7. **Código limpo** - Legível e manutenível
-8. **Teste imediatamente** - Execute em dev mode após cada mudança
-9. **Testes** - Considere adicionar testes
+2. **Prefira Server Components** - Melhor performance e SEO
+3. **Estado na URL** - Permite compartilhamento e bookmarks
+4. **Componentize** - Reutilize código
+5. **Separe lógica de UI** - Use hooks customizados
+6. **Feedback visual** - Loading, erros, sucesso
+7. **Validação** - Cliente e servidor
+8. **Mensagens claras** - Para o usuário
+9. **Código limpo** - Legível e manutenível
+10. **Teste imediatamente** - Execute em dev mode após cada mudança
+11. **Testes** - Considere adicionar testes
 
-## Exemplo de Página Completa
+## Exemplos de Implementação
+
+### Exemplo 1: Server Component com filtros na URL (PREFERIDO)
 
 ```tsx
-'use client';
-
-import { useState, useEffect } from 'react';
+// app/transacoes/page.tsx
 import { transacoesService } from '@/services/api.service';
-import { Transacao } from '@/types';
-import { formatarMoeda } from '@/utils/format';
-import toast from 'react-hot-toast';
+import { ListaTransacoes } from '@/components/ListaTransacoes';
+import { FiltrosTransacoes } from '@/components/FiltrosTransacoes';
 
-export default function MinhasPagina() {
-  const [dados, setDados] = useState<Transacao[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    carregarDados();
-  }, []);
-
-  const carregarDados = async () => {
-    try {
-      const data = await transacoesService.listar();
-      setDados(data);
-    } catch (error) {
-      toast.error('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
+interface PageProps {
+  searchParams: {
+    categoria?: string;
+    mes?: string;
+    ano?: string;
   };
+}
 
-  if (loading) return <div>Carregando...</div>;
+export default async function TransacoesPage({ searchParams }: PageProps) {
+  const transacoes = await transacoesService.listar({
+    categoria: searchParams.categoria,
+    mes: searchParams.mes ? parseInt(searchParams.mes) : undefined,
+    ano: searchParams.ano ? parseInt(searchParams.ano) : undefined,
+  });
 
   return (
     <main className="min-h-screen p-8">
-      {/* conteúdo */}
+      <h1 className="text-2xl font-bold mb-6">Transações</h1>
+      <FiltrosTransacoes /> {/* Client Component para interação */}
+      <ListaTransacoes transacoes={transacoes} /> {/* Server Component */}
     </main>
+  );
+}
+```
+
+### Exemplo 2: Client Component para UI interativa
+
+```tsx
+// components/FiltrosTransacoes.tsx
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+
+export function FiltrosTransacoes() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleCategoriaChange = (categoria: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (categoria) {
+      params.set('categoria', categoria);
+    } else {
+      params.delete('categoria');
+    }
+    router.push(`/transacoes?${params.toString()}`);
+  };
+
+  return (
+    <select 
+      value={searchParams.get('categoria') || ''} 
+      onChange={(e) => handleCategoriaChange(e.target.value)}
+      className="border rounded-md px-4 py-2"
+    >
+      <option value="">Todas as categorias</option>
+      <option value="alimentacao">Alimentação</option>
+      <option value="transporte">Transporte</option>
+    </select>
+  );
+}
+```
+
+### Exemplo 3: useState para estado efêmero de UI
+
+```tsx
+// components/ModalEditarTransacao.tsx
+'use client';
+
+import { useState } from 'react';
+
+export function ModalEditarTransacao({ transacao }) {
+  // ✅ useState OK para estado de UI efêmero
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>Editar</button>
+      {isOpen && (
+        <dialog className="modal">
+          {/* conteúdo do modal */}
+          <button onClick={() => setIsOpen(false)}>Fechar</button>
+        </dialog>
+      )}
+    </>
   );
 }
 ```
