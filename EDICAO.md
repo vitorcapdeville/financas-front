@@ -24,44 +24,7 @@ A funcionalidade de edição permite que os usuários atualizem valores e catego
 4. Modifique o valor e/ou categoria
 5. Clique em "Salvar" para confirmar ou "Cancelar" para descartar
 
-### 2. Componente Modal de Edição
-
-**Localização:** `src/components/ModalEditarTransacao.tsx`
-
-Um modal reutilizável para edição de transações que pode ser utilizado em qualquer parte da aplicação.
-
-**Props:**
-```typescript
-interface ModalEditarTransacaoProps {
-  transacao: Transacao;          // Transação a ser editada
-  isOpen: boolean;               // Controle de visibilidade
-  onClose: () => void;           // Callback ao fechar
-  onSalvar: (id: number, data: TransacaoUpdate) => Promise<void>; // Callback ao salvar
-}
-```
-
-**Exemplo de uso:**
-```tsx
-import ModalEditarTransacao from '@/components/ModalEditarTransacao';
-
-const [modalAberto, setModalAberto] = useState(false);
-const [transacaoSelecionada, setTransacaoSelecionada] = useState<Transacao | null>(null);
-
-const handleSalvar = async (id: number, data: TransacaoUpdate) => {
-  await transacoesService.atualizar(id, data);
-  toast.success('Transação atualizada!');
-  // Recarregar dados...
-};
-
-<ModalEditarTransacao
-  transacao={transacaoSelecionada}
-  isOpen={modalAberto}
-  onClose={() => setModalAberto(false)}
-  onSalvar={handleSalvar}
-/>
-```
-
-### 3. Componente de Item de Categoria
+### 2. Componente de Item de Categoria
 
 **Localização:** `src/components/CategoriaItem.tsx`
 

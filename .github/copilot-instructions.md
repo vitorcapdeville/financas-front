@@ -586,22 +586,23 @@ export function FiltrosTransacoes() {
 ### Exemplo 3: useState para estado efêmero de UI
 
 ```tsx
-// components/ModalEditarTransacao.tsx
+// components/ModalConfirmacao.tsx
 'use client';
 
 import { useState } from 'react';
 
-export function ModalEditarTransacao({ transacao }) {
+export function ModalConfirmacao({ onConfirmar }) {
   // ✅ useState OK para estado de UI efêmero
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)}>Editar</button>
+      <button onClick={() => setIsOpen(true)}>Excluir</button>
       {isOpen && (
         <dialog className="modal">
-          {/* conteúdo do modal */}
-          <button onClick={() => setIsOpen(false)}>Fechar</button>
+          <p>Tem certeza que deseja excluir?</p>
+          <button onClick={() => { onConfirmar(); setIsOpen(false); }}>Confirmar</button>
+          <button onClick={() => setIsOpen(false)}>Cancelar</button>
         </dialog>
       )}
     </>
