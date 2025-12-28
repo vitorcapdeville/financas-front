@@ -84,14 +84,250 @@ interface ResumoMensal {
 
 ## Padrões de Código
 
-### 1. Componentes
+### 1. Componentes: Server Components vs Client Components
 
-**PRIORIDADE: Server Components**
+**REGRA DE OURO**: Use Server Components por padrão. Adicione `"use client"` APENAS quando absolutamente necessário.
 
-- **Sempre prefira Server Components** ao invés de Client Components
-- Use Server Components por padrão - só adicione `"use client"` quando estritamente necessário
-- Client Components são necessários apenas para: hooks de estado, event handlers, browser APIs, useEffect
-- Server Components reduzem bundle size e melhoram performance
+#### ✅ Quando usar Server Components (PADRÃO)
+
+Server Components devem ser sua primeira escolha para:
+- Buscar dados do servidor (fetch, database queries)
+- Acessar recursos backend (APIs, arquivos, secrets)
+- Renderizar conteúdo estático ou baseado em dados
+- Reduzir bundle JavaScript do cliente
+- Manter lógica sensível no servidor
+
+**Exemplos de uso**:
+```typescript
+// ✅ PERFEITO: Server Component busca dados
+export default async function TransacoesPage({ searchParams }: PageProps) {
+  const transacoes = await transacoesServerService.listar(searchParams);
+  return <ListaTransacoes transacoes={transacoes} />;
+}
+
+// ✅ PERFEITO: Componente reutilizável sem interatividade
+export default function TransacaoCard({ transacao }: Props) {
+  return (
+    <div>
+      <h3>{transacao.descricao}</h3>
+      <p>{formatarMoeda(transacao.valor)}</p>
+    </div>
+  );
+}
+```
+
+#### ❌ Quando você PRECISA usar Client Components
+
+Adicione `"use client"` APENAS se precisar de:
+
+1. **Hooks React de estado/lifecycle**: `useState`, `useReducer`, `useEffect`, `useLayoutEffect`
+2. **Event handlers**: `onClick`, `onChange`, `onSubmit`, etc
+3. **Browser APIs**: `localStorage`, `sessionStorage`, `window`, `document`, `navigator`
+4. **Hooks de navegação client-side**: `useRouter` (para navegação programática), `useSearchParams` (para ler/atualizar)
+5. **Hooks de contexto**: `useContext` (mas considere props drilling em Server Components)
+6. **Bibliotecas client-only**: React Hook Form, bibliotecas de animação, etc
+
+**Exemplos de uso**:
+```typescript
+// ✅ Client Component necessário: usa useState e onClick
+'use client';
+
+export default function DropdownMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+  return <button onClick={() => setIsOpen(!isOpen)}>Menu</button>;
+}
+
+// ✅ Client Component necessário: usa useRouter para navegação
+'use client';
+
+export default function BotaoVoltar() {
+  const router = useRouter();
+  return <button onClick={() => router.back()}>← Voltar</button>;
+}
+```
+
+#### 🎯 Estratégia: Composição Server + Client
+
+**MELHOR PRÁTICA**: Mantenha Client Components pequenos e focados. Use Server Components como wrapper.
+
+```typescript
+// ✅ EXCELENTE: Server Component wrapper
+export default async function PaginaTransacao({ params }: Props) {
+  const transacao = await fetchTransacao(params.id);
+  const todasTags = await fetchTags(); // Busca no servidor
+  
+  return (
+    <main>
+      {/* Server Components para conteúdo estático */}
+      <Header transacao={transacao} />
+      <DetalhesTransacao transacao={transacao} />
+      
+      {/* Client Component APENAS para interatividade */}
+      <SeletorTags 
+        transacaoId={transacao.id}
+        tagsAtuais={transacao.tags}
+        todasTags={todasTags} // Passa dados do servidor
+      />
+    </main>
+  );
+}
+
+// Client Component pequeno e focado
+'use client';
+export default function SeletorTags({ transacaoId, tagsAtuais, todasTags }: Props) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  // Apenas lógica de UI interativa
+}
+```
+
+#### ❌ Anti-padrões Comuns
+
+```typescript
+// ❌ ERRADO: Buscar dados em Client Component
+'use client';
+
+export default function Transacoes() {
+  const [transacoes, setTransacoes] = useState([]);
+  
+  useEffect(() => {
+    fetch('/api/transacoes').then(res => setTransacoes(res.json()));
+  }, []);
+  
+  return <Lista items={transacoes} />;
+}
+
+// ✅ CORRETO: Buscar dados em Server Component
+export default async function Transacoes() {
+  const transacoes = await transacoesServerService.listar();
+  return <Lista items={transacoes} />;
+}
+
+// ❌ ERRADO: Todo componente como Client Component
+'use client';
+
+export default function Card({ title, valor }: Props) {
+  return <div><h3>{title}</h3><p>{valor}</p></div>; // Sem interatividade!
+}
+
+// ✅ CORRETO: Componente sem 'use client' (Server Component)
+export default function Card({ title, valor }: Props) {
+  return <div><h3>{title}</h3><p>{valor}</p></div>;
+}
+```
+
+### 2. Server Actions: Mutações de Dados
+
+**Server Actions** são funções assíncronas executadas no servidor, usadas para mutações (POST, PUT, DELETE).
+
+#### Quando usar Server Actions
+
+Use Server Actions para:
+- Criar, atualizar ou deletar dados
+- Submeter formulários
+- Executar lógica server-side após ação do usuário
+- Revalidar cache do Next.js
+
+#### Como criar Server Actions
+
+**Opção 1 - Arquivo separado** (RECOMENDADO para reutilização):
+```typescript
+// app/transacao/[id]/actions.ts
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+export async function adicionarTagAction(transacaoId: number, tagId: number) {
+  const res = await fetch(`${API_URL}/transacoes/${transacaoId}/tags/${tagId}`, {
+    method: 'POST',
+  });
+  
+  if (!res.ok) throw new Error('Erro ao adicionar tag');
+  
+  revalidatePath(`/transacao/${transacaoId}`); // Revalida página
+  return { success: true };
+}
+```
+
+**Opção 2 - Inline em Server Component** (para ações específicas):
+```typescript
+// Server Component
+export default function MeuComponente({ id }: Props) {
+  async function deletarAction() {
+    'use server';
+    await fetch(`${API_URL}/items/${id}`, { method: 'DELETE' });
+    revalidatePath('/items');
+  }
+  
+  return <form action={deletarAction}>
+    <button type="submit">Deletar</button>
+  </form>;
+}
+```
+
+#### Usar Server Actions em Client Components
+
+```typescript
+// app/transacao/[id]/actions.ts
+'use server';
+export async function adicionarTagAction(transacaoId: number, tagId: number) {
+  // ... implementação
+  revalidatePath(`/transacao/${transacaoId}`);
+}
+
+// components/DropdownTags.tsx
+'use client';
+
+import { useTransition } from 'react';
+import { adicionarTagAction } from '@/app/transacao/[id]/actions';
+
+export default function DropdownTags({ transacaoId, tags }: Props) {
+  const [isPending, startTransition] = useTransition();
+  
+  function handleAdicionar(tagId: number) {
+    startTransition(async () => {
+      await adicionarTagAction(transacaoId, tagId);
+    });
+  }
+  
+  return <button onClick={() => handleAdicionar(1)} disabled={isPending}>
+    Adicionar {isPending && '...'}
+  </button>;
+}
+```
+
+#### Benefícios de Server Actions vs API Routes
+
+**Server Actions**:
+- ✅ Menos código (sem criar API route separado)
+- ✅ Type-safe (TypeScript end-to-end)
+- ✅ Revalidação automática com `revalidatePath()`
+- ✅ Progressive Enhancement (funciona sem JS)
+- ✅ Menos bundle JS (lógica fica no servidor)
+
+**API Routes** (usar apenas quando):
+- Expor endpoint público/externo
+- Webhook de terceiros
+- Necessita de middlewares complexos
+
+#### Organização de Server Actions
+
+```
+app/
+├── transacao/
+│   └── [id]/
+│       ├── page.tsx           # Server Component
+│       └── actions.ts         # Server Actions desta página
+├── tags/
+│   ├── page.tsx
+│   └── actions.ts
+└── actions/                   # Actions globais (se reutilizáveis)
+    ├── transacoes.ts
+    └── tags.ts
+```
+
+**Recomendação**: Comece com actions por página (`app/[rota]/actions.ts`). Se houver reutilização, mova para `app/actions/`.
+
+### 3. Estado na URL vs useState
 
 **PRIORIDADE: Estado na URL**
 
@@ -100,56 +336,7 @@ interface ResumoMensal {
 - Use `searchParams` em Server Components ou `useSearchParams` + `useRouter` em Client Components
 - useState é permitido apenas para estado efêmero de UI (modais abertos, campos de formulário, etc)
 
-```typescript
-// ✅ PREFERIDO: Server Component com estado na URL
-interface PageProps {
-  searchParams: { categoria?: string; mes?: string; ano?: string };
-}
-
-export default async function TransacoesPage({ searchParams }: PageProps) {
-  const transacoes = await transacoesService.listar({
-    categoria: searchParams.categoria,
-    mes: searchParams.mes ? parseInt(searchParams.mes) : undefined,
-    ano: searchParams.ano ? parseInt(searchParams.ano) : undefined,
-  });
-  
-  return <ListaTransacoes transacoes={transacoes} />;
-}
-
-// ✅ OK: Client Component quando necessário (filtros interativos)
-'use client';
-
-import { useRouter, useSearchParams } from 'next/navigation';
-
-export default function FiltrosTransacoes() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  const handleFiltrar = (categoria: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('categoria', categoria);
-    router.push(`?${params.toString()}`);
-  };
-  
-  return <button onClick={() => handleFiltrar('alimentacao')}>Filtrar</button>;
-}
-
-// ❌ EVITAR: useState para estado que deveria estar na URL
-'use client';
-
-export default function TransacoesPage() {
-  const [categoria, setCategoria] = useState(''); // ❌ Não permite bookmark
-  // ...
-}
-```
-
-**Quando usar cada abordagem:**
-
-- **Server Component + URL params**: Filtros, paginação, ordenação, seleção de período
-- **Client Component + URL params**: Filtros interativos que precisam de feedback imediato
-- **useState**: Estado efêmero de UI (modal aberto, dropdown expandido, campo de input)
-
-### CRÍTICO: Preservação de Parâmetros de URL em Navegação
+### 4. Preservação de Parâmetros de URL em Navegação
 
 **REGRA**: Páginas COM filtros devem preservar `searchParams`. Páginas SEM filtros devem usar `router.back()`.
 
@@ -212,30 +399,63 @@ export default function PaginaSemFiltros() {
 - [src/app/tags/page.tsx](src/app/tags/page.tsx) ✅ Usa router.back() (sem filtros)
 - [src/app/importar/page.tsx](src/app/importar/page.tsx) → Deve usar router.back() (sem filtros)
 
-### 2. Serviços de API
+### 5. Serviços de API
 
-- Centralize todas as chamadas à API em `services/api.service.ts`
+**IMPORTANTE**: Prefira Server Actions para mutações. Use serviços API apenas em Client Components quando necessário.
+
+- Centralize todas as chamadas à API client-side em `services/api.service.ts`
+- Para Server Components, use `services/*.server.ts` com fetch nativo
 - Use async/await
 - Trate erros adequadamente
 - Use tipos TypeScript para requisições e respostas
 
 ```typescript
+// Client-side service (api.service.ts)
 export const meuService = {
   async listar(): Promise<MeuTipo[]> {
     const { data } = await api.get('/endpoint');
     return data;
   },
 };
+
+// Server-side service (meu.server.ts)
+export const meuServerService = {
+  async listar(): Promise<MeuTipo[]> {
+    const res = await fetch(`${API_URL}/endpoint`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  },
+};
 ```
 
-### 3. Formulários
+### 6. Formulários
 
-- Use React Hook Form para gerenciar estado
-- Valide dados no frontend
+- Prefira Server Actions para submissão de formulários
+- Use React Hook Form apenas quando necessário (validação complexa client-side)
+- Para formulários simples, use formulários nativos com Server Actions
+- Valide dados no frontend e backend
 - Forneça feedback visual de erros
-- Use toast para feedback de sucesso/erro
 
 ```typescript
+// ✅ PREFERIDO: Formulário com Server Action
+'use server';
+async function criarAction(formData: FormData) {
+  const nome = formData.get('nome');
+  // ... lógica
+  revalidatePath('/items');
+}
+
+export default function Form() {
+  return (
+    <form action={criarAction}>
+      <input name="nome" required />
+      <button type="submit">Criar</button>
+    </form>
+  );
+}
+
+// ✅ OK: React Hook Form quando necessário
+'use client';
 const { register, handleSubmit, formState: { errors } } = useForm();
 
 const onSubmit = async (data: FormData) => {
@@ -248,7 +468,7 @@ const onSubmit = async (data: FormData) => {
 };
 ```
 
-### 4. Estilização (Tailwind CSS)
+### 7. Estilização (Tailwind CSS)
 
 - Use classes Tailwind para estilização
 - Mantenha consistência com o design system
@@ -261,20 +481,21 @@ const onSubmit = async (data: FormData) => {
 </div>
 ```
 
-### 5. Estados e Loading
+### 8. Estados e Loading
 
 - Sempre mostre estados de loading
+- Use `useTransition()` em Client Components com Server Actions
 - Forneça feedback para ações do usuário
 - Trate estados vazios (empty states)
 - Use skeleton loaders quando apropriado
 
-### 6. Navegação
+### 9. Navegação
 
 - Use `<Link>` do Next.js para navegação
 - Mantenha URLs semânticas
 - Use query params para filtros
 
-### 7. Formatação de Dados
+### 10. Formatação de Dados
 
 - Use funções utilitárias de `utils/format.ts`
 - `formatarMoeda()`: Para valores em R$
@@ -609,3 +830,81 @@ export function ModalConfirmacao({ onConfirmar }) {
   );
 }
 ```
+### Exemplo 4: Migração de Client Component para Server Component + Server Actions
+
+**ANTES (Client Component com Axios + router.refresh):**
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { tagsService } from '@/services/api.service';
+
+export default function SeletorTags({ transacaoId, tagsAtuais }) {
+  const router = useRouter();
+  const [todasTags, setTodasTags] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    tagsService.listar().then(setTodasTags);
+  }, []);
+
+  async function removerTag(tagId) {
+    setLoading(true);
+    await tagsService.removerTag(transacaoId, tagId);
+    router.refresh(); // ❌ Revalida Client-side
+    setLoading(false);
+  }
+
+  return (
+    <div>
+      {tagsAtuais.map(tag => (
+        <button onClick={() => removerTag(tag.id)} disabled={loading}>
+          {tag.nome} ✕
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+**DEPOIS (Server Component + Server Actions):**
+```tsx
+// app/transacao/[id]/actions.ts
+'use server';
+import { revalidatePath } from 'next/cache';
+
+export async function removerTagAction(transacaoId: number, tagId: number) {
+  await fetch(`${API_URL}/transacoes/${transacaoId}/tags/${tagId}`, {
+    method: 'DELETE',
+  });
+  revalidatePath(`/transacao/${transacaoId}`); // ✅ Revalida Server-side
+}
+
+// components/SeletorTags.tsx (Server Component)
+import { removerTagAction } from '@/app/transacao/[id]/actions';
+
+export default function SeletorTags({ transacaoId, tagsAtuais, todasTags }) {
+  // ✅ Recebe todasTags via props (buscadas no Server Component pai)
+  
+  return (
+    <div>
+      {tagsAtuais.map(tag => (
+        <form key={tag.id} action={async () => {
+          'use server';
+          await removerTagAction(transacaoId, tag.id);
+        }}>
+          <button type="submit">{tag.nome} ✕</button>
+        </form>
+      ))}
+    </div>
+  );
+}
+```
+
+**Benefícios da migração:**
+- ✅ Menos JavaScript no bundle (sem Axios, router, useState, useEffect)
+- ✅ Dados buscados no servidor (melhor performance)
+- ✅ Revalidação automática com `revalidatePath()`
+- ✅ Código mais simples e direto
+- ✅ Progressive Enhancement (funciona sem JS)
