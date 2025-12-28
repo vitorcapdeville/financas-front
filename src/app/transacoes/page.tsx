@@ -18,11 +18,12 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
   const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período, diaInicio e tags
+  // Constrói query string preservando período, diaInicio, tags e origem
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
   if (searchParams.tags) queryParams.set('tags', searchParams.tags);
+  queryParams.set('origem', 'transacoes');
   const queryString = queryParams.toString();
   
   // Busca transações no servidor

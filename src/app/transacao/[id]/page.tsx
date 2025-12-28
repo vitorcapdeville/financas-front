@@ -1,8 +1,10 @@
 import { transacoesServerService } from '@/services/api.server';
+import { tagsServerService } from '@/services/tags.server';
 import { formatarData, formatarMoeda } from '@/utils/format';
+import { Tag } from '@/types';
 import Link from 'next/link';
 import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
-import BotaoVoltar from '@/components/BotaoVoltar';
+import BotaoVoltarTransacao from '@/components/BotaoVoltarTransacao';
 import SeletorTags from '@/components/SeletorTags';
 
 interface TransacaoPageProps {
@@ -33,6 +35,15 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
     transacao = null;
   }
 
+  // Busca todas as tags no servidor
+  let todasTags: Tag[];
+  try {
+    todasTags = await tagsServerService.listar();
+  } catch (error) {
+    console.error('Erro ao carregar tags:', error);
+    todasTags = [];
+  }
+
   if (!transacao) {
     return (
       <main className="min-h-screen p-8 bg-gray-50 flex items-center justify-center">
@@ -55,7 +66,7 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
         {/* Header */}
         <div className="mb-8">
           <div className="mb-4">
-            <BotaoVoltar />
+            <BotaoVoltarTransacao />
           </div>
           <h1 className="text-4xl font-bold text-gray-900">
             Detalhes da Transação
@@ -137,10 +148,11 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
               </div>
             </div>
 
-            {/* Seletor de Tags - Client Component */}
+            {/* Seletor de Tags - Server Component */}
             <SeletorTags
               transacaoId={transacao.id}
               tagsAtuais={transacao.tags || []}
+              todasTags={todasTags}
             />
 
             {transacao.observacoes && (
