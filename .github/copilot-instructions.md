@@ -633,13 +633,82 @@ const onSubmit = async (data: FormData) => {
 - Use classes Tailwind para estilização
 - Mantenha consistência com o design system
 - Use componentes reutilizáveis para UI comum
-- Cores principais: primary (verde), gray, red (saídas), green (entradas)
+- Cores principais: blue (ações primárias), gray (secundárias), red (destrutivas), green (entradas)
 
 ```tsx
 <div className="bg-white rounded-lg shadow-md p-6">
   <h2 className="text-xl font-bold text-gray-900 mb-4">Título</h2>
 </div>
 ```
+
+**REGRA CRÍTICA - Cores de Botões:**
+
+**SEMPRE use `bg-blue-600 hover:bg-blue-700`** para botões primários. NUNCA use `bg-primary-*`:
+
+```tsx
+// ✅ CORRETO: Botão primário (azul)
+<button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+  Salvar
+</button>
+
+// ✅ CORRETO: Botão secundário (cinza)
+<button className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+  Cancelar
+</button>
+
+// ✅ CORRETO: Botão destrutivo (vermelho)
+<button className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors">
+  Deletar
+</button>
+
+// ❌ ERRADO: NUNCA use bg-primary
+<button className="bg-primary-600 hover:bg-primary-700"> // ❌ PROIBIDO
+  Botão
+</button>
+
+// ❌ ERRADO: NUNCA use bg-green para botões primários
+<button className="bg-green-600 hover:bg-green-700"> // ❌ Use blue
+  Salvar
+</button>
+```
+
+**Paleta de cores padrão:**
+- **Azul (`blue-600`)**: Ações primárias, salvar, confirmar, criar
+- **Cinza (`gray-200`)**: Cancelar, ações secundárias
+- **Vermelho (`red-600`)**: Deletar, remover, ações destrutivas
+- **Verde (`green-600`)**: APENAS para valores positivos/entradas em dados financeiros, NÃO para botões
+
+**REGRA CRÍTICA - Estados Disabled:**
+
+**SEMPRE inclua `disabled:opacity-50`** em TODOS botões que usam `disabled`:
+
+```tsx
+// ✅ CORRETO: Botão com estado disabled
+<button
+  onClick={handleClick}
+  disabled={isPending}
+  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+>
+  {isPending ? 'Salvando...' : 'Salvar'}
+</button>
+
+// ❌ ERRADO: Sem disabled:opacity-50
+<button
+  disabled={isPending}
+  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+>
+  Salvar
+</button>
+```
+
+**Classes obrigatórias para botões:**
+- Cor de fundo: `bg-blue-600`, `bg-gray-200`, `bg-red-600`
+- Texto: `text-white` (azul/vermelho) ou `text-gray-700` (cinza)
+- Padding: `px-4 py-2` (pequeno) ou `px-6 py-3` (normal)
+- Bordas: `rounded-lg` ou `rounded-md`
+- Hover: `hover:bg-blue-700`, `hover:bg-gray-300`, etc
+- Transição: `transition-colors`
+- Disabled: `disabled:opacity-50` (OBRIGATÓRIO se usar disabled)
 
 **REGRA CRÍTICA - Contraste de Inputs:**
 
@@ -651,7 +720,7 @@ const onSubmit = async (data: FormData) => {
   type="text"
   value={value}
   onChange={(e) => setValue(e.target.value)}
-  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
   placeholder="Digite aqui..."
 />
 
@@ -659,14 +728,14 @@ const onSubmit = async (data: FormData) => {
 <select
   value={selected}
   onChange={(e) => setSelected(e.target.value)}
-  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
 >
   <option value="1">Opção 1</option>
 </select>
 
 // ❌ ERRADO: Sem text-gray-900 (texto invisível em alguns navegadores)
 <input
-  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
 />
 ```
 
@@ -675,7 +744,7 @@ const onSubmit = async (data: FormData) => {
 - `border border-gray-300` - Borda
 - `rounded-md` - Bordas arredondadas
 - `px-4 py-2` ou `px-3 py-2` - Padding
-- `focus:outline-none focus:ring-2 focus:ring-primary-500` - Estado de foco
+- `focus:outline-none focus:ring-2 focus:ring-blue-500` - Estado de foco
 
 ### 8. Estados e Loading
 
@@ -685,7 +754,140 @@ const onSubmit = async (data: FormData) => {
 - Trate estados vazios (empty states)
 - Use skeleton loaders quando apropriado
 
-### 9. Navegação
+### 9. Notificações e Confirmações
+
+**REGRA CRÍTICA**: NUNCA use `alert()`, `confirm()` ou `prompt()` nativos do navegador. Use sempre toast e modais.
+
+#### **Sistema de Notificações (react-hot-toast)**
+
+Biblioteca instalada: `react-hot-toast` com `<Toaster />` configurado em [layout.tsx](src/app/layout.tsx).
+
+**Quando usar toast:**
+- ✅ Feedback de sucesso após ações (criar, editar, deletar)
+- ✅ Erros de API ou validação
+- ✅ Mensagens informativas para o usuário
+- ❌ NUNCA use `alert()` - sempre `toast.success/error()`
+
+**Padrões de uso:**
+
+```tsx
+'use client';
+
+import { toast } from 'react-hot-toast';
+
+// ✅ CORRETO: Sucesso
+toast.success('Configuração salva com sucesso!');
+toast.success(`✅ Regra aplicada! ${count} transações modificadas.`);
+
+// ✅ CORRETO: Erro
+toast.error('Erro ao salvar. Tente novamente.');
+toast.error(`Erro ao deletar: ${error}`);
+
+// ✅ CORRETO: Validação
+toast.error('Digite uma categoria');
+toast.error('Selecione ao menos uma tag');
+
+// ❌ ERRADO: NUNCA use alert
+alert('Sucesso!'); // ❌ PROIBIDO
+alert('Erro!');    // ❌ PROIBIDO
+```
+
+**Import obrigatório:**
+```tsx
+import { toast } from 'react-hot-toast';
+```
+
+**Métodos disponíveis:**
+- `toast.success(mensagem)` - Ações bem-sucedidas
+- `toast.error(mensagem)` - Erros e validações
+- `toast.loading(mensagem)` - Estado de carregamento (raramente usado)
+- ⚠️ `toast.warning()` **NÃO EXISTE** - use `toast.error()` para validações
+
+#### **Sistema de Confirmações (ModalConfirmacao)**
+
+Componente reutilizável: [src/components/ModalConfirmacao.tsx](src/components/ModalConfirmacao.tsx)
+
+**Quando usar ModalConfirmacao:**
+- ✅ Confirmações antes de ações destrutivas (deletar, aplicar em massa)
+- ✅ Perguntas importantes ao usuário
+- ❌ NUNCA use `confirm()` nativo
+
+**Padrão de uso:**
+
+```tsx
+'use client';
+
+import { useState, useTransition } from 'react';
+import { ModalConfirmacao } from '@/components/ModalConfirmacao';
+
+export default function MeuComponente() {
+  const [itemParaDeletar, setItemParaDeletar] = useState<number | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleDeletar = () => {
+    if (!itemParaDeletar) return;
+    
+    startTransition(async () => {
+      try {
+        await deletarAction(itemParaDeletar);
+        toast.success('Item deletado com sucesso!');
+        setItemParaDeletar(null);
+      } catch (error) {
+        toast.error('Erro ao deletar item');
+        setItemParaDeletar(null);
+      }
+    });
+  };
+
+  return (
+    <>
+      {/* Botão que abre modal */}
+      <button onClick={() => setItemParaDeletar(item.id)}>
+        Deletar
+      </button>
+
+      {/* Modal de confirmação */}
+      {itemParaDeletar && (
+        <ModalConfirmacao
+          titulo="Deletar Item"
+          mensagem="Tem certeza que deseja deletar este item? Esta ação não pode ser desfeita."
+          onConfirmar={handleDeletar}
+          onCancelar={() => setItemParaDeletar(null)}
+          textoBotaoConfirmar="Deletar"
+          textoBotaoCancelar="Cancelar"
+          isPending={isPending}
+          tipo="danger" // 'danger' | 'warning' | 'info'
+        />
+      )}
+    </>
+  );
+}
+
+// ❌ ERRADO: NUNCA use confirm nativo
+if (!confirm('Deseja deletar?')) return; // ❌ PROIBIDO
+```
+
+**Props do ModalConfirmacao:**
+- `titulo: string` - Título do modal
+- `mensagem: string` - Mensagem de confirmação (pode usar `\n` para quebras de linha)
+- `onConfirmar: () => void` - Callback ao confirmar
+- `onCancelar: () => void` - Callback ao cancelar
+- `textoBotaoConfirmar?: string` - Texto do botão (default: "Confirmar")
+- `textoBotaoCancelar?: string` - Texto do botão (default: "Cancelar")
+- `isPending?: boolean` - Desabilita botões durante loading
+- `tipo?: 'danger' | 'warning' | 'info'` - Estilo visual (default: "info")
+
+**Tipos visuais:**
+- `danger` - Ações destrutivas (deletar, remover permanentemente) - vermelho
+- `warning` - Ações com impacto significativo (aplicar regras em massa) - amarelo
+- `info` - Perguntas/confirmações gerais - azul
+
+**Referências:**
+- Exemplo completo: [src/components/ListaTags.tsx](src/components/ListaTags.tsx)
+- Modal com múltiplos estados: [src/components/ListaRegras.tsx](src/components/ListaRegras.tsx)
+- Modal após criar regra: [src/components/BotoesAcaoTransacao.tsx](src/components/BotoesAcaoTransacao.tsx)
+
+### 10. Navegação
 
 - Use `<Link>` do Next.js para navegação
 - Mantenha URLs semânticas
@@ -736,7 +938,7 @@ Ao criar componentes, considere:
 
 ### Button
 ```tsx
-<button className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors">
+<button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50">
   Texto
 </button>
 ```
@@ -745,7 +947,7 @@ Ao criar componentes, considere:
 ```tsx
 <input
   type="text"
-  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
 />
 ```
 
