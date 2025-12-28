@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { tagsService } from '@/services/api.service';
+import { useTransition } from 'react';
+import { deletarTagAction } from '@/app/tags/actions';
 import { Tag } from '@/types';
 
 interface ListaTagsProps {
@@ -9,19 +9,21 @@ interface ListaTagsProps {
 }
 
 export default function ListaTags({ tags }: ListaTagsProps) {
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   async function handleDelete(id: number, nome: string) {
     if (!confirm(`Deseja realmente excluir a tag "${nome}"? Ela será removida de todas as transações.`)) {
       return;
     }
-    try {
-      await tagsService.deletar(id);
-      router.refresh(); // Revalida Server Component
-    } catch (error) {
-      console.error('Erro ao deletar tag:', error);
-      alert('Erro ao deletar tag. Tente novamente.');
-    }
+    
+    startTransition(async () => {
+      try {
+        await deletarTagAction(id, nome);
+      } catch (error) {
+        console.error('Erro ao deletar tag:', error);
+        alert('Erro ao deletar tag. Tente novamente.');
+      }
+    });
   }
 
   return (
@@ -52,9 +54,10 @@ export default function ListaTags({ tags }: ListaTagsProps) {
               </div>
               <button
                 onClick={() => handleDelete(tag.id, tag.nome)}
-                className="text-red-600 hover:text-red-800 px-4 py-2 rounded hover:bg-red-50 transition-colors"
+                disabled={isPending}
+                className="text-red-600 hover:text-red-800 px-4 py-2 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
               >
-                Excluir
+                {isPending ? 'Excluindo...' : 'Excluir'}
               </button>
             </div>
           ))}

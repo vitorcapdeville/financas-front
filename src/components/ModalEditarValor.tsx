@@ -9,6 +9,7 @@ interface ModalEditarValorProps {
   valorOriginal?: number; // Valor original antes de edições
   onSalvar: (novoValor: number) => Promise<void>;
   onRestaurar?: () => Promise<void>; // Callback para restaurar valor original
+  isPending: boolean;
 }
 
 export default function ModalEditarValor({
@@ -18,9 +19,9 @@ export default function ModalEditarValor({
   valorOriginal,
   onSalvar,
   onRestaurar,
+  isPending,
 }: ModalEditarValorProps) {
   const [valor, setValor] = useState(valorAtual);
-  const [salvando, setSalvando] = useState(false);
 
   if (!isOpen) return null;
 
@@ -33,28 +34,16 @@ export default function ModalEditarValor({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    setSalvando(true);
-    try {
-      await onSalvar(valor);
-    } finally {
-      setSalvando(false);
-    }
+    await onSalvar(valor);
   };
 
   const handleRestaurar = async () => {
     if (!onRestaurar) return;
-    
-    setSalvando(true);
-    try {
-      await onRestaurar();
-    } finally {
-      setSalvando(false);
-    }
+    await onRestaurar();
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !salvando) {
+    if (e.target === e.currentTarget && !isPending) {
       onClose();
     }
   };
@@ -91,7 +80,7 @@ export default function ModalEditarValor({
                     type="button"
                     onClick={handleRestaurar}
                     className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded hover:bg-amber-200 transition-colors"
-                    disabled={salvando}
+                    disabled={isPending}
                   >
                     Restaurar
                   </button>
@@ -118,7 +107,7 @@ export default function ModalEditarValor({
                   onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
                   className="w-full border border-gray-300 rounded-md pl-10 pr-4 py-3 text-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
-                  disabled={salvando}
+                  disabled={isPending}
                 />
               </div>
               <p className="text-sm text-gray-500 mt-1">
@@ -136,7 +125,7 @@ export default function ModalEditarValor({
                   type="button"
                   onClick={() => aplicarPercentual(0)}
                   className="bg-red-100 text-red-700 px-4 py-3 rounded-lg font-semibold hover:bg-red-200 transition-colors"
-                  disabled={salvando}
+                  disabled={isPending}
                 >
                   0%
                   <span className="block text-xs mt-1">
@@ -147,7 +136,7 @@ export default function ModalEditarValor({
                   type="button"
                   onClick={() => aplicarPercentual(50)}
                   className="bg-yellow-100 text-yellow-700 px-4 py-3 rounded-lg font-semibold hover:bg-yellow-200 transition-colors"
-                  disabled={salvando}
+                  disabled={isPending}
                 >
                   50%
                   <span className="block text-xs mt-1">
@@ -158,7 +147,7 @@ export default function ModalEditarValor({
                   type="button"
                   onClick={() => aplicarPercentual(100)}
                   className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-semibold hover:bg-green-200 transition-colors"
-                  disabled={salvando}
+                  disabled={isPending}
                 >
                   100%
                   <span className="block text-xs mt-1">
@@ -195,16 +184,16 @@ export default function ModalEditarValor({
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              disabled={salvando}
+              disabled={isPending}
             >
               Cancelar
             </button>
             <button
               type="submit"
               className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-green-400"
-              disabled={salvando || valor === valorAtual}
+              disabled={isPending || valor === valorAtual}
             >
-              {salvando ? 'Salvando...' : 'Salvar'}
+              {isPending ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </form>

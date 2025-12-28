@@ -8,6 +8,7 @@ interface ModalEditarCategoriaProps {
   onClose: () => void;
   categoriaAtual: string;
   onSalvar: (novaCategoria: string) => Promise<void>;
+  isPending: boolean;
 }
 
 export default function ModalEditarCategoria({
@@ -15,11 +16,11 @@ export default function ModalEditarCategoria({
   onClose,
   categoriaAtual,
   onSalvar,
+  isPending,
 }: ModalEditarCategoriaProps) {
   const [categoria, setCategoria] = useState(categoriaAtual);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [loadingCategorias, setLoadingCategorias] = useState(true);
-  const [salvando, setSalvando] = useState(false);
   const [modoCustom, setModoCustom] = useState(false);
 
   useEffect(() => {
@@ -49,16 +50,11 @@ export default function ModalEditarCategoria({
       return;
     }
 
-    setSalvando(true);
-    try {
-      await onSalvar(categoria.trim());
-    } finally {
-      setSalvando(false);
-    }
+    await onSalvar(categoria.trim());
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !salvando) {
+    if (e.target === e.currentTarget && !isPending) {
       onClose();
     }
   };
@@ -90,7 +86,7 @@ export default function ModalEditarCategoria({
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                disabled={salvando}
+                disabled={isPending}
               >
                 Selecionar
               </button>
@@ -102,7 +98,7 @@ export default function ModalEditarCategoria({
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
-                disabled={salvando}
+                disabled={isPending}
               >
                 Nova Categoria
               </button>
@@ -132,7 +128,7 @@ export default function ModalEditarCategoria({
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                         }`}
-                        disabled={salvando}
+                        disabled={isPending}
                       >
                         <span className="font-medium">{cat}</span>
                         {cat === categoriaAtual && (
@@ -157,7 +153,7 @@ export default function ModalEditarCategoria({
                   onChange={(e) => setCategoria(e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: Alimentação, Transporte, Lazer..."
-                  disabled={salvando}
+                  disabled={isPending}
                   autoFocus
                 />
               </div>
@@ -198,7 +194,7 @@ export default function ModalEditarCategoria({
                         setCategoria(sugestao);
                       }}
                       className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      disabled={salvando}
+                      disabled={isPending}
                     >
                       {sugestao}
                     </button>
@@ -214,16 +210,16 @@ export default function ModalEditarCategoria({
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-              disabled={salvando}
+              disabled={isPending}
             >
               Cancelar
             </button>
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-              disabled={salvando || !categoria.trim() || categoria === categoriaAtual}
+              disabled={isPending || !categoria.trim() || categoria === categoriaAtual}
             >
-              {salvando ? 'Salvando...' : 'Salvar'}
+              {isPending ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </form>

@@ -1,30 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { tagsService } from '@/services/api.service';
-import { TagCreate } from '@/types';
+import { useState, useTransition } from 'react';
+import { criarTagAction } from '@/app/tags/actions';
 
 export default function FormularioNovaTag() {
-  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<TagCreate>({
-    nome: '',
-    cor: '#3B82F6',
-    descricao: '',
-  });
+  const [isPending, startTransition] = useTransition();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    try {
-      await tagsService.criar(formData);
-      setFormData({ nome: '', cor: '#3B82F6', descricao: '' });
-      setShowForm(false);
-      router.refresh(); // Revalida Server Component
-    } catch (error) {
-      console.error('Erro ao criar tag:', error);
-      alert('Erro ao criar tag. Tente novamente.');
-    }
+    
+    const form = e.currentTarget; // Salva referência antes do startTransition
+    const formData = new FormData(form);
+    
+    startTransition(async () => {
+      try {
+        await criarTagAction(formData);
+        form.reset(); // Usa a referência salva
+        setShowForm(false);
+      } catch (error) {
+        console.error('Erro ao criar tag:', error);
+        alert('Erro ao criar tag. Tente novamente.');
+      }
+    });
   }
 
   return (
@@ -33,6 +31,7 @@ export default function FormularioNovaTag() {
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={isPending}
         >
           {showForm ? 'Cancelar' : 'Nova Tag'}
         </button>
@@ -48,12 +47,13 @@ export default function FormularioNovaTag() {
               </label>
               <input
                 type="text"
+                name="nome"
                 required
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                defaultValue=""
                 className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Ex: Assinaturas, Esporádico, Essencial"
                 maxLength={50}
+                disabled={isPending}
               />
             </div>
             <div>
@@ -63,11 +63,11 @@ export default function FormularioNovaTag() {
               <div className="flex items-center gap-4">
                 <input
                   type="color"
-                  value={formData.cor}
-                  onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                  name="cor"
+                  defaultValue="#3B82F6"
                   className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+                  disabled={isPending}
                 />
-                <span className="text-sm text-gray-600">{formData.cor}</span>
               </div>
             </div>
             <div>
@@ -75,19 +75,21 @@ export default function FormularioNovaTag() {
                 Descrição
               </label>
               <textarea
-                value={formData.descricao}
-                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                name="descricao"
+                defaultValue=""
                 className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Descrição opcional da tag"
                 rows={3}
                 maxLength={200}
+                disabled={isPending}
               />
             </div>
             <button
               type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              disabled={isPending}
             >
-              Criar Tag
+              {isPending ? 'Criando...' : 'Criar Tag'}
             </button>
           </form>
         </div>
