@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { Tag, CriterioTipo } from '@/types';
 
 interface ModalEditarTagsProps {
@@ -54,12 +55,12 @@ export default function ModalEditarTags({
     e.preventDefault();
 
     if (tagsParaAdicionar.length === 0) {
-      alert('Selecione ao menos uma tag');
+      toast.error('Selecione ao menos uma tag');
       return;
     }
 
     if (criarRegra && !nomeRegra.trim()) {
-      alert('Digite um nome para a regra');
+      toast.error('Digite um nome para a regra');
       return;
     }
 

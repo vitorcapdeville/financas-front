@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { transacoesService } from '@/services/api.service';
 import { CriterioTipo } from '@/types';
 
@@ -55,12 +56,12 @@ export default function ModalEditarCategoria({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoria.trim()) {
-      alert('Digite uma categoria');
+      toast.error('Digite uma categoria');
       return;
     }
 
     if (criarRegra && !nomeRegra.trim()) {
-      alert('Digite um nome para a regra');
+      toast.error('Digite um nome para a regra');
       return;
     }
 

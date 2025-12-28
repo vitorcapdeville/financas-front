@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'react-hot-toast';
 import { salvarDiaInicioAction, salvarCriterioAction } from '@/app/configuracoes/actions';
 import { CriterioDataTransacao } from '@/types';
 
@@ -26,10 +27,10 @@ export default function FormularioConfiguracoes({
       try {
         await salvarDiaInicioAction(dia);
         setDiaAtual(dia);
-        alert('Dia de início salvo com sucesso!');
+        toast.success('Dia de início salvo com sucesso!');
       } catch (error) {
         console.error('Erro ao salvar dia de início:', error);
-        alert(error instanceof Error ? error.message : 'Erro ao salvar. Tente novamente.');
+        toast.error(error instanceof Error ? error.message : 'Erro ao salvar. Tente novamente.');
       }
     });
   }
@@ -43,10 +44,10 @@ export default function FormularioConfiguracoes({
       try {
         await salvarCriterioAction(criterio);
         setCriterioAtual(criterio);
-        alert('Critério de data salvo com sucesso!');
+        toast.success('Critério de data salvo com sucesso!');
       } catch (error) {
         console.error('Erro ao salvar critério:', error);
-        alert(error instanceof Error ? error.message : 'Erro ao salvar. Tente novamente.');
+        toast.error(error instanceof Error ? error.message : 'Erro ao salvar. Tente novamente.');
       }
     });
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { CriterioTipo } from '@/types';
 
 interface ModalEditarValorProps {
@@ -47,7 +48,7 @@ export default function ModalEditarValor({
     e.preventDefault();
     
     if (criarRegra && !nomeRegra.trim()) {
-      alert('Digite um nome para a regra');
+      toast.error('Digite um nome para a regra');
       return;
     }
     

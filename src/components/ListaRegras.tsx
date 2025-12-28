@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'react-hot-toast';
 import { Regra, CriterioTipo, TipoAcao } from '@/types';
 import { 
   deletarRegraAction, 
@@ -26,7 +27,7 @@ export function ListaRegras({ regras }: ListaRegrasProps) {
       try {
         await toggleAtivoAction(regraId);
       } catch (error) {
-        alert(`Erro ao alterar status: ${error}`);
+        toast.error(`Erro ao alterar status: ${error}`);
       }
     });
   };
@@ -37,7 +38,8 @@ export function ListaRegras({ regras }: ListaRegrasProps) {
         await deletarRegraAction(regraId);
         setRegraParaDeletar(null);
       } catch (error) {
-        alert(`Erro ao deletar: ${error}`);
+        toast.error(`Erro ao deletar: ${error}`);
+        setRegraParaDeletar(null);
       }
     });
   };
@@ -46,10 +48,11 @@ export function ListaRegras({ regras }: ListaRegrasProps) {
     startTransition(async () => {
       try {
         const resultado = await aplicarRegraRetroativamenteAction(regraId);
-        alert(`✅ Regra aplicada com sucesso!\n${resultado.transacoes_modificadas} transações modificadas.`);
+        toast.success(`✅ Regra aplicada com sucesso! ${resultado.transacoes_modificadas} transações modificadas.`);
         setRegraParaAplicar(null);
       } catch (error) {
-        alert(`Erro ao aplicar regra: ${error}`);
+        toast.error(`Erro ao aplicar regra: ${error}`);
+        setRegraParaAplicar(null);
       }
     });
   };
@@ -57,7 +60,7 @@ export function ListaRegras({ regras }: ListaRegrasProps) {
   const handleSalvarPrioridade = (regraId: number) => {
     const prioridade = parseInt(novaPrioridade);
     if (isNaN(prioridade) || prioridade < 1) {
-      alert('Prioridade deve ser um número maior ou igual a 1');
+      toast.error('Prioridade deve ser um número maior ou igual a 1');
       return;
     }
 
@@ -67,7 +70,7 @@ export function ListaRegras({ regras }: ListaRegrasProps) {
         setEditandoPrioridade(null);
         setNovaPrioridade('');
       } catch (error) {
-        alert(`Erro ao atualizar prioridade: ${error}`);
+        toast.error(`Erro ao atualizar prioridade: ${error}`);
       }
     });
   };

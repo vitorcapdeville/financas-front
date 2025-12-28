@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'react-hot-toast';
 import { Tag } from '@/types';
 import { adicionarTagAction } from '@/app/transacao/[id]/actions';
 
@@ -23,7 +24,7 @@ export default function DropdownAdicionarTag({
         setShowDropdown(false);
       } catch (error) {
         console.error('Erro ao adicionar tag:', error);
-        // TODO: Adicionar toast de erro
+        toast.error('Erro ao adicionar tag. Tente novamente.');
       }
     });
   }

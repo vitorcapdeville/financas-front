@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'react-hot-toast';
 import { criarTagAction } from '@/app/tags/actions';
 
 export default function FormularioNovaTag() {
@@ -20,7 +21,7 @@ export default function FormularioNovaTag() {
         setShowForm(false);
       } catch (error) {
         console.error('Erro ao criar tag:', error);
-        alert('Erro ao criar tag. Tente novamente.');
+        toast.error('Erro ao criar tag. Tente novamente.');
       }
     });
   }
@@ -30,7 +31,7 @@ export default function FormularioNovaTag() {
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           disabled={isPending}
         >
           {showForm ? 'Cancelar' : 'Nova Tag'}
@@ -86,7 +87,7 @@ export default function FormularioNovaTag() {
             </div>
             <button
               type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               disabled={isPending}
             >
               {isPending ? 'Criando...' : 'Criar Tag'}

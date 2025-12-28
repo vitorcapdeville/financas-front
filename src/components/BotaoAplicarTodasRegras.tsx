@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'react-hot-toast';
 import { aplicarTodasRegrasAction } from '@/app/regras/actions';
 import { ModalConfirmacao } from './ModalConfirmacao';
 
@@ -12,10 +13,10 @@ export function BotaoAplicarTodasRegras() {
     startTransition(async () => {
       try {
         const resultado = await aplicarTodasRegrasAction();
-        alert(`✅ Regras aplicadas com sucesso!\n${resultado.total_aplicacoes} aplicações realizadas.`);
+        toast.success(`✅ Regras aplicadas com sucesso! ${resultado.total_aplicacoes} aplicações realizadas.`);
         setMostrarModal(false);
       } catch (error) {
-        alert(`Erro ao aplicar regras: ${error}`);
+        toast.error(`Erro ao aplicar regras: ${error}`);
       }
     });
   };
