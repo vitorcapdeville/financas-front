@@ -5,15 +5,7 @@ import { useEffect, useState } from 'react';
 import { configuracoesService } from '@/services/api.service';
 import { CriterioDataTransacao } from '@/types';
 
-interface FiltrosPeriodoProps {
-  showDiaInicio?: boolean;
-  showCriterioData?: boolean;
-}
-
-export default function FiltrosPeriodo({ 
-  showDiaInicio = true,
-  showCriterioData = true 
-}: FiltrosPeriodoProps) {
+export default function FiltrosPeriodo() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -61,36 +53,11 @@ export default function FiltrosPeriodo({
     router.push(`?${params.toString()}`);
   };
 
-  const handleDiaInicioChange = async (novoDia: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('diaInicio', novoDia.toString());
-    router.push(`?${params.toString()}`);
-    
-    // Salva no banco de dados
-    try {
-      await configuracoesService.salvar('diaInicioPeriodo', novoDia.toString());
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-    }
-  };
-
-  const handleCriterioDataChange = async (novoCriterio: CriterioDataTransacao) => {
-    setCriterioData(novoCriterio);
-    
-    // Salva no banco de dados
-    try {
-      await configuracoesService.salvar('criterio_data_transacao', novoCriterio);
-      // Força recarregamento da página para aplicar o novo filtro
-      router.refresh();
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-    }
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-      <div className="flex gap-4 items-center flex-wrap">
-        <div className="flex-1 max-w-xs">
+      <div className="flex gap-6 items-start flex-wrap">
+        {/* Seletor de Período */}
+        <div className="flex-1 min-w-[200px] max-w-xs">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Período
           </label>
@@ -102,59 +69,23 @@ export default function FiltrosPeriodo({
           />
         </div>
         
-        {showCriterioData && (
-          <div className="flex-1 max-w-xs">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Critério de Data
-            </label>
-            <select
-              value={criterioData}
-              onChange={(e) => handleCriterioDataChange(e.target.value as CriterioDataTransacao)}
-              className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value={CriterioDataTransacao.DATA_TRANSACAO}>
-                Data da Transação
-              </option>
-              <option value={CriterioDataTransacao.DATA_FATURA}>
-                Data da Fatura
-              </option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              {criterioData === CriterioDataTransacao.DATA_TRANSACAO 
-                ? 'Mostra gastos na data em que ocorreram'
-                : 'Mostra gastos na data de pagamento da fatura'}
-            </p>
-          </div>
-        )}
-        
-        {showDiaInicio && (
-          <>
-            <div className="flex-1 max-w-xs">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Dia de Início do Período
-              </label>
-              <select
-                value={diaInicioAtual}
-                onChange={(e) => handleDiaInicioChange(parseInt(e.target.value))}
-                className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                  <option key={dia} value={dia}>
-                    Dia {dia}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <div className="text-sm text-gray-500 mt-6">
-                Visualizando: <span className="font-semibold text-gray-900">
-                  {new Date(ano, mes - 1, diaInicioAtual).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} até {' '}
-                  {new Date(ano, mes, diaInicioAtual - 1).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-            </div>
-          </>
-        )}
+        {/* Visualização do Período */}
+        <div className="flex-1 min-w-[250px]">
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            Período visualizado
+          </p>
+          <p className="text-sm text-gray-900">
+            <span className="font-semibold">
+              {new Date(ano, mes - 1, diaInicioAtual).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} até {' '}
+              {new Date(ano, mes, diaInicioAtual - 1).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            {criterioData === CriterioDataTransacao.DATA_TRANSACAO 
+              ? '📅 Gastos do cartão mostrados na data da transação'
+              : '💳 Gastos do cartão mostrados na data da fatura'}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -197,6 +197,12 @@ export default async function Home(props: HomeProps) {
           >
             Gerenciar Tags
           </Link>
+          <Link
+            href="/configuracoes"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            ⚙️ Configurações
+          </Link>
         </div>
       </div>
     </main>

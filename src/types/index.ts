@@ -75,3 +75,16 @@ export enum CriterioDataTransacao {
   DATA_TRANSACAO = 'data_transacao',
   DATA_FATURA = 'data_fatura',
 }
+
+export interface Configuracao {
+  id: number;
+  chave: string;
+  valor: string;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface ConfiguracaoCreate {
+  chave: string;
+  valor: string;
+}

@@ -908,3 +908,177 @@ export default function SeletorTags({ transacaoId, tagsAtuais, todasTags }) {
 - ✅ Revalidação automática com `revalidatePath()`
 - ✅ Código mais simples e direto
 - ✅ Progressive Enhancement (funciona sem JS)
+## Gerenciamento de Configurações
+
+**IMPORTANTE**: Configurações que afetam o comportamento do aplicativo são gerenciadas exclusivamente através da página `/configuracoes`.
+
+### Página de Configurações
+
+- **Rota**: `/configuracoes`
+- **Componente**: [src/app/configuracoes/page.tsx](src/app/configuracoes/page.tsx)
+- **Formulário**: [src/components/FormularioConfiguracoes.tsx](src/components/FormularioConfiguracoes.tsx)
+- **Server Actions**: [src/app/configuracoes/actions.ts](src/app/configuracoes/actions.ts)
+- **API Backend**: `POST /configuracoes/` com validações server-side
+
+### Configurações Existentes
+
+1. **`diaInicioPeriodo`** (número 1-28)
+   - Define o dia de início do período mensal para cálculos
+   - Exemplo: Dia 25 significa período de 25/out até 24/nov
+   - Validação: Client-side e server-side (1-28)
+
+2. **`criterio_data_transacao`** (enum)
+   - Define como agrupar gastos do cartão de crédito
+   - Valores: `data_transacao` ou `data_fatura`
+   - Validação: Client-side e server-side (enum válido)
+
+### Padrão para Adicionar Novas Configurações
+
+Ao adicionar uma nova configuração, siga este padrão:
+
+#### 1. Backend - Adicionar Validação
+
+Em `app/routers/configuracoes.py`:
+
+```python
+elif configuracao.chave == "nova_configuracao":
+    # Validar valor específico
+    if configuracao.valor not in ["valor1", "valor2"]:
+        raise HTTPException(
+            status_code=400,
+            detail="nova_configuracao deve ser valor1 ou valor2"
+        )
+```
+
+#### 2. Frontend - Adicionar Tipo TypeScript
+
+Em [src/types/index.ts](src/types/index.ts):
+
+```typescript
+export enum NovaConfigEnum {
+  VALOR1 = 'valor1',
+  VALOR2 = 'valor2',
+}
+```
+
+#### 3. Frontend - Atualizar Server Service
+
+Em [src/services/configuracoes.server.ts](src/services/configuracoes.server.ts):
+
+```typescript
+async listarTodas(): Promise<Record<string, string>> {
+  const [diaInicio, criterio, novaConfig] = await Promise.all([
+    this.obter('diaInicioPeriodo'),
+    this.obter('criterio_data_transacao'),
+    this.obter('nova_configuracao'), // Adicionar aqui
+  ]);
+
+  return {
+    diaInicioPeriodo: diaInicio.valor || '1',
+    criterio_data_transacao: criterio.valor || 'data_transacao',
+    nova_configuracao: novaConfig.valor || 'valor1', // Default
+  };
+}
+```
+
+#### 4. Frontend - Criar Server Action
+
+Em [src/app/configuracoes/actions.ts](src/app/configuracoes/actions.ts):
+
+```typescript
+export async function salvarNovaConfigAction(valor: string) {
+  // Validação client-side
+  const valoresValidos = Object.values(NovaConfigEnum);
+  if (!valoresValidos.includes(valor as NovaConfigEnum)) {
+    throw new Error('Valor inválido para nova_configuracao');
+  }
+
+  const res = await fetch(`${API_URL}/configuracoes/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chave: 'nova_configuracao',
+      valor: valor,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Erro ao salvar: ${error}`);
+  }
+
+  revalidatePath('/configuracoes');
+  revalidatePath('/'); // Se afetar dashboard
+  return { success: true };
+}
+```
+
+#### 5. Frontend - Adicionar ao Formulário
+
+Em [src/components/FormularioConfiguracoes.tsx](src/components/FormularioConfiguracoes.tsx):
+
+```tsx
+interface FormularioConfiguracoesProps {
+  diaInicioPeriodo: number;
+  criterioDataTransacao: string;
+  novaConfiguracao: string; // Adicionar prop
+}
+
+// Adicionar nova seção no JSX:
+<div className="bg-white rounded-lg shadow-md p-6">
+  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+    Título da Nova Configuração
+  </h2>
+  <p className="text-gray-600 mb-6">
+    Descrição detalhada do que essa configuração faz e como afeta o app.
+  </p>
+  
+  <form onSubmit={handleSalvarNovaConfig}>
+    {/* Campos: select, radio, input, etc */}
+    <button type="submit" disabled={isPending}>
+      {isPending ? 'Salvando...' : 'Salvar'}
+    </button>
+  </form>
+</div>
+```
+
+#### 6. Frontend - Atualizar Página de Configurações
+
+Em [src/app/configuracoes/page.tsx](src/app/configuracoes/page.tsx):
+
+```tsx
+<FormularioConfiguracoes 
+  diaInicioPeriodo={parseInt(configuracoes.diaInicioPeriodo)}
+  criterioDataTransacao={configuracoes.criterio_data_transacao}
+  novaConfiguracao={configuracoes.nova_configuracao} // Passar prop
+/>
+```
+
+### Regras Importantes
+
+1. **NUNCA adicione controles de configuração inline em outros componentes** - sempre use `/configuracoes`
+2. **Sempre valide tanto client-side quanto server-side**
+3. **Use `revalidatePath()` após salvar para atualizar a UI**
+4. **Adicione descrições claras** explicando o propósito de cada configuração
+5. **Use enums TypeScript** para valores fixos
+6. **Valores padrão** devem estar em `listarTodas()` do server service
+7. **Feedback visual** com `isPending` para desabilitar botões durante salvamento
+
+### Visualização de Configurações em Outras Páginas
+
+Se uma configuração precisa ser **visualizada** (mas não editada) em outra página:
+
+```tsx
+// ✅ CORRETO: Apenas visualização, sem controles
+<p className="text-sm text-gray-500">
+  📅 Gastos do cartão mostrados na data da transação
+</p>
+
+// ❌ ERRADO: Controles inline (select, radio, etc)
+<select onChange={handleChange}>...</select>
+```
+
+Exemplo em [src/components/FiltrosPeriodo.tsx](src/components/FiltrosPeriodo.tsx):
+- ✅ Mostra período calculado: "25 de out. até 24 de nov."
+- ✅ Mostra critério atual: "📅 Gastos do cartão mostrados na data da transação"
+- ❌ NÃO tem controles para alterar (removidos)
