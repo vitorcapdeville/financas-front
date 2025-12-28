@@ -338,11 +338,171 @@ app/
 
 ### 4. Preservação de Parâmetros de URL em Navegação
 
-**REGRA**: Páginas COM filtros devem preservar `searchParams`. Páginas SEM filtros devem usar `router.back()`.
+**REGRA CRÍTICA**: TODAS as páginas do aplicativo devem preservar os filtros de período (`periodo`, `diaInicio`, `tags`) ao navegar entre elas.
 
-**Cenário 1 - Páginas COM filtros de período (categoria, transacoes, etc):**
+**Por quê?** O contexto temporal é fundamental - o usuário escolhe um período (ex: "25 de nov. até 24 de dez.") e espera que esse período seja mantido ao navegar entre diferentes seções do app (Dashboard → Tags → Regras → Configurações → etc).
 
-Links que navegam para outras páginas DEVEM preservar `periodo` e `diaInicio`:
+**Implementação Padrão**: Use Client Component com `useSearchParams()` na navegação global para construir queryString e preservar filtros em TODOS os links.
+
+**Exceção**: Use `router.back()` apenas para botões "Voltar" dentro de fluxos específicos (ex: voltar dos detalhes de uma transação para a lista).
+
+**Cenário: Navegação Global (Menu Superior/Sidebar)**
+
+Quando criar navegação global que conecta todas as páginas do app:
+
+```typescript
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+
+export function NavegacaoGlobal() {
+  const searchParams = useSearchParams();
+
+  // TODAS as páginas preservam filtros de período
+  const construirQueryString = () => {
+    const params = new URLSearchParams();
+    const periodo = searchParams.get('periodo');
+    const diaInicio = searchParams.get('diaInicio');
+    const tags = searchParams.get('tags');
+
+    if (periodo) params.set('periodo', periodo);
+    if (diaInicio) params.set('diaInicio', diaInicio);
+    if (tags) params.set('tags', tags);
+
+    return params.toString();
+  };
+
+  const queryString = construirQueryString();
+
+  const links = [
+    { href: '/', label: '🏠 Dashboard' },
+    { href: '/transacoes', label: '💳 Transações' },
+    { href: '/tags', label: '🏷️ Tags' },
+    { href: '/regras', label: '⚙️ Regras' },
+    { href: '/importar', label: '📤 Importar' },
+    { href: '/configuracoes', label: '⚙️ Configurações' },
+  ];
+
+  return (
+    <nav>
+      {links.map(link => {
+        const href = queryString ? `${link.href}?${queryString}` : link.href;
+        return <Link key={link.href} href={href}>{link.label}</Link>;
+      })}
+    </nav>
+  );
+}
+```
+
+**Cenário 1 - Navegação DENTRO de páginas com filtros:**
+
+```typescript
+// ✅ CORRETO: Link preserva searchParams
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+imExemplo: Links em Componentes Client-Side**
+
+```typescript
+// ✅ CORRETO: Sempre preserva filtros
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+
+export default function MeuComponente() {
+  const searchParams = useSearchParams();
+  
+  // Construir queryString para preservar filtros
+  const params = new URLSearchParams();
+  const periodo = searchParams.get('periodo');
+  const diaInicio = searchParams.get('diaInicio');
+  const tags = searchParams.get('tags');
+  
+  if (periodo) params.set('periodo', periodo);
+  if (diaInicio) params.set('diaInicio', diaInicio);
+  if (tags) params.set('tags', tags);
+  
+  const queryString = params.toString();
+
+  return (
+    <div>
+      {/* ✅ CORRETO: Todos os links preservam filtros */}
+      <Link href={queryString ? `/?${queryString}` : '/'}>Dashboard</Link>
+      <Link href={queryString ? `/transacoes?${queryString}` : '/transacoes'}>Transações</Link>
+      <Link href={queryString ? `/tags?${queryString}` : '/tags'}>Tags</Link>
+      <Link href={queryString ? `/regras?${queryString}` : '/regras'}>Regras</Link>
+    </div>
+  );
+}
+```
+
+**Exemplo: Botão Voltar (Navegação Interna)**
+
+**IMPORTANTE**: Para páginas que não possuem filtros próprios (tags, regras, importar, configurações), SEMPRE use o componente `<BotaoVoltar>` que faz `router.back()` para preservar TODO o estado da página anterior.
+
+```typescript
+// ✅ CORRETO: Usa componente BotaoVoltar (já existe no projeto)
+import BotaoVoltar from '@/components/BotaoVoltar';
+
+export default function PaginaSemFiltros() {
+  return (
+    <div>
+      {/* ✅ CORRETO: Componente reutilizável que usa router.back() */}
+      <BotaoVoltar>← Voltar ao Dashboard</BotaoVoltar>
+      
+      {/* ✅ TAMBÉM CORRETO: Com classes customizadas */}
+      <BotaoVoltar className="bg-gray-200 px-6 py-3 rounded-lg">
+        ← Voltar
+      </BotaoVoltar>
+    </div>
+  );
+}
+
+// ❌ ERRADO: Link direto perde filtros da página anterior
+<Link href="/">Voltar ao Dashboard</Link>
+
+// ❌ ERRADO: Implementar router.back() inline (use o componente!)
+'use client';
+const router = useRouter();
+<button onClick={() => router.back()}>Voltar</button>
+```
+
+**NUNCA faça:**
+```typescript
+// ❌ ERRADO: Link direto sem preservar filtros
+<Link href="/">Dashboard</Link>
+<Link href="/tags">Tags</Link>
+<Link href="/regras">Regras</Link>
+
+// ❌ ERRADO: Usar router.back() em navegação global (perde controle do destino)
+<button onClick={() => router.back()}>Ir para Dashboard</button>
+```
+
+**Componente BotaoVoltar:**
+- Localização: [src/components/BotaoVoltar.tsx](src/components/BotaoVoltar.tsx)
+- Uso: Client Component que faz `router.back()` preservando histórico completo
+- Props: `children` (texto do botão), `className` (estilos customizados)
+- Quando usar: Páginas sem filtros próprios (tags, regras, importar, configurações)
+
+**Páginas do Aplicativo (TODAS preservam filtros via navegação global):**
+- ✅ [src/app/page.tsx](src/app/page.tsx) - Dashboard
+- ✅ [src/app/transacoes/page.tsx](src/app/transacoes/page.tsx) - Lista de transações
+- ✅ [src/app/categoria/[nome]/page.tsx](src/app/categoria/[nome]/page.tsx) - Transações por categoria
+- ✅ [src/app/tags/page.tsx](src/app/tags/page.tsx) - Gerenciar tags (usa BotaoVoltar)
+- ✅ [src/app/regras/page.tsx](src/app/regras/page.tsx) - Gerenciar regras (usa BotaoVoltar)
+- ✅ [src/app/importar/page.tsx](src/app/importar/page.tsx) - Importar dados (usa BotaoVoltar)
+- ✅ [src/app/configuracoes/page.tsx](src/app/configuracoes/page.tsx) - Configurações (usa BotaoVoltar)
+- ⚪ [src/app/transacao/[id]/page.tsx](src/app/transacao/[id]/page.tsx) - Detalhes de transação (usa BotaoVoltar)
+
+**Checklist antes de criar navegação:**
+1. ✅ É navegação global (menu/sidebar)? → SEMPRE preserve filtros com queryString
+2. ✅ É botão "Voltar" em página sem filtros? → Use componente `<BotaoVoltar>`
+3. ✅ É link pontual dentro de conteúdo? → Preserve filtros com queryString
+4. ❌ NUNCA use `<Link href="/">` direto em páginas sem filtros - use `<BotaoVoltar>`
+
+**Cenário 1 - Navegação DENTRO de páginas com filtros:**
 
 ```typescript
 'use client';
@@ -480,6 +640,42 @@ const onSubmit = async (data: FormData) => {
   <h2 className="text-xl font-bold text-gray-900 mb-4">Título</h2>
 </div>
 ```
+
+**REGRA CRÍTICA - Contraste de Inputs:**
+
+**SEMPRE inclua `text-gray-900` em TODOS inputs e selects** para garantir contraste adequado:
+
+```tsx
+// ✅ CORRETO: Input com cor de texto explícita
+<input
+  type="text"
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+  placeholder="Digite aqui..."
+/>
+
+// ✅ CORRETO: Select com cor de texto explícita
+<select
+  value={selected}
+  onChange={(e) => setSelected(e.target.value)}
+  className="w-full border border-gray-300 rounded-md px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+>
+  <option value="1">Opção 1</option>
+</select>
+
+// ❌ ERRADO: Sem text-gray-900 (texto invisível em alguns navegadores)
+<input
+  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+/>
+```
+
+**Classes obrigatórias para inputs/selects:**
+- `text-gray-900` - Cor do texto (OBRIGATÓRIO)
+- `border border-gray-300` - Borda
+- `rounded-md` - Bordas arredondadas
+- `px-4 py-2` ou `px-3 py-2` - Padding
+- `focus:outline-none focus:ring-2 focus:ring-primary-500` - Estado de foco
 
 ### 8. Estados e Loading
 

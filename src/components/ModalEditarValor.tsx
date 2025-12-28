@@ -1,13 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { CriterioTipo } from '@/types';
 
 interface ModalEditarValorProps {
   isOpen: boolean;
   onClose: () => void;
   valorAtual: number;
   valorOriginal?: number; // Valor original antes de edições
-  onSalvar: (novoValor: number) => Promise<void>;
+  descricaoTransacao: string; // Para criar regras
+  categoriaAtual?: string; // Para critério de categoria
+  onSalvar: (
+    novoValor: number,
+    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; percentual: number }
+  ) => Promise<void>;
   onRestaurar?: () => Promise<void>; // Callback para restaurar valor original
   isPending: boolean;
 }
@@ -17,11 +23,16 @@ export default function ModalEditarValor({
   onClose,
   valorAtual,
   valorOriginal,
+  descricaoTransacao,
+  categoriaAtual,
   onSalvar,
   onRestaurar,
   isPending,
 }: ModalEditarValorProps) {
   const [valor, setValor] = useState(valorAtual);
+  const [criarRegra, setCriarRegra] = useState(false);
+  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_CONTEM);
+  const [nomeRegra, setNomeRegra] = useState('');
 
   if (!isOpen) return null;
 
@@ -34,7 +45,20 @@ export default function ModalEditarValor({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSalvar(valor);
+    
+    if (criarRegra && !nomeRegra.trim()) {
+      alert('Digite um nome para a regra');
+      return;
+    }
+    
+    const baseValor = valorOriginal ?? valorAtual;
+    const percentual = (valor / baseValor) * 100;
+    
+    const dadosRegra = criarRegra
+      ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim(), percentual }
+      : undefined;
+    
+    await onSalvar(valor, dadosRegra);
   };
 
   const handleRestaurar = async () => {
@@ -174,8 +198,79 @@ export default function ModalEditarValor({
                   {valor > valorAtual ? '+' : ''}
                   {formatarMoeda(valor - valorAtual)}
                 </p>
+                <p className="text-xs text-blue-700 mt-2">
+                  Percentual: {((valor / baseValor) * 100).toFixed(1)}% do valor {foiEditado ? 'original' : 'atual'}
+                </p>
               </div>
             )}
+
+            {/* Opção de Criar Regra */}
+            <div className="border-t border-gray-200 pt-6 mt-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={criarRegra}
+                  onChange={(e) => setCriarRegra(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 rounded"
+                  disabled={isPending}
+                />
+                <span className="text-sm font-medium text-gray-900">
+                  🔁 Criar regra para aplicar automaticamente
+                </span>
+              </label>
+
+              {criarRegra && (
+                <div className="mt-4 bg-blue-50 rounded-lg p-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-blue-900 mb-2">
+                      Nome da regra:
+                    </label>
+                    <input
+                      type="text"
+                      value={nomeRegra}
+                      onChange={(e) => setNomeRegra(e.target.value)}
+                      className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ex: Reduzir 50% em transações de Uber"
+                      disabled={isPending}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-blue-900 mb-2">
+                      Aplicar em transações que:
+                    </label>
+                    <select
+                      value={criterioRegra}
+                      onChange={(e) => setCriterioRegra(e.target.value as CriterioTipo)}
+                      className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isPending}
+                    >
+                      <option value={CriterioTipo.DESCRICAO_CONTEM}>
+                        Descrição contém "{descricaoTransacao}"
+                      </option>
+                      <option value={CriterioTipo.DESCRICAO_EXATA}>
+                        Descrição exata = "{descricaoTransacao}"
+                      </option>
+                      {categoriaAtual && (
+                        <option value={CriterioTipo.CATEGORIA}>
+                          Categoria = "{categoriaAtual}"
+                        </option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="text-sm text-blue-800 bg-blue-100 rounded p-3">
+                    <p className="font-medium mb-1">ℹ️ Como funciona:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>A regra aplicará <strong>{((valor / baseValor) * 100).toFixed(1)}%</strong> do valor original</li>
+                      <li>Valor original é preservado e usado como base de cálculo</li>
+                      <li>Aplicada automaticamente em transações futuras</li>
+                      <li>Pode ser aplicada retroativamente</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Botões de Ação */}
@@ -193,7 +288,7 @@ export default function ModalEditarValor({
               className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-green-400"
               disabled={isPending || valor === valorAtual}
             >
-              {isPending ? 'Salvando...' : 'Salvar'}
+              {isPending ? 'Salvando...' : criarRegra ? 'Salvar e Criar Regra' : 'Salvar'}
             </button>
           </div>
         </form>

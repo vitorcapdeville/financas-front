@@ -88,3 +88,42 @@ export interface ConfiguracaoCreate {
   chave: string;
   valor: string;
 }
+
+export enum TipoAcao {
+  ALTERAR_CATEGORIA = 'alterar_categoria',
+  ADICIONAR_TAGS = 'adicionar_tags',
+  ALTERAR_VALOR = 'alterar_valor',
+}
+
+export enum CriterioTipo {
+  DESCRICAO_EXATA = 'descricao_exata',
+  DESCRICAO_CONTEM = 'descricao_contem',
+  CATEGORIA = 'categoria',
+}
+
+export interface Regra {
+  id: number;
+  nome: string;
+  tipo_acao: TipoAcao;
+  criterio_tipo: CriterioTipo;
+  criterio_valor: string;
+  acao_valor: string;
+  prioridade: number;
+  ativo: boolean;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface RegraCreate {
+  nome: string;
+  tipo_acao: TipoAcao;
+  criterio_tipo: CriterioTipo;
+  criterio_valor: string;
+  acao_valor: string;
+}
+
+export interface RegraUpdate {
+  nome?: string;
+  prioridade?: number;
+  ativo?: boolean;
+}

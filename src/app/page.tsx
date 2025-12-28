@@ -3,6 +3,7 @@ import { formatarMoeda } from '@/utils/format';
 import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo';
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
 import FiltroTags from '@/components/FiltroTags';
+import { NavegacaoPrincipal } from '@/components/NavegacaoPrincipal';
 import Link from 'next/link';
 
 interface HomeProps {
@@ -50,6 +51,9 @@ export default async function Home(props: HomeProps) {
             Gerencie suas entradas e saídas de forma inteligente
           </p>
         </header>
+
+        {/* Navegação */}
+        <NavegacaoPrincipal />
 
         {/* Seletor de Período - Client Component */}
         <FiltrosPeriodo showDiaInicio={true} />
@@ -176,34 +180,6 @@ export default async function Home(props: HomeProps) {
             </div>
           </div>
         )}
-
-        {/* Links de Navegação */}
-        <div className="mt-8 flex gap-4 flex-wrap">
-          <Link
-            href={`/transacoes?${queryString}`}
-            className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-          >
-            Ver Todas as Transações
-          </Link>
-          <Link
-            href="/importar"
-            className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-          >
-            Importar Dados
-          </Link>
-          <Link
-            href="/tags"
-            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
-          >
-            Gerenciar Tags
-          </Link>
-          <Link
-            href="/configuracoes"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            ⚙️ Configurações
-          </Link>
-        </div>
       </div>
     </main>
   );

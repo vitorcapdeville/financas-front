@@ -1,37 +1,30 @@
 'use client';
 
 interface ModalConfirmacaoProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
   titulo: string;
   mensagem: string;
+  onConfirmar: () => void;
+  onCancelar: () => void;
   textoBotaoConfirmar?: string;
   textoBotaoCancelar?: string;
+  isPending?: boolean;
   tipo?: 'danger' | 'warning' | 'info';
 }
 
-export default function ModalConfirmacao({
-  isOpen,
-  onClose,
-  onConfirm,
+export function ModalConfirmacao({
   titulo,
   mensagem,
+  onConfirmar,
+  onCancelar,
   textoBotaoConfirmar = 'Confirmar',
   textoBotaoCancelar = 'Cancelar',
-  tipo = 'danger',
+  isPending = false,
+  tipo = 'info',
 }: ModalConfirmacaoProps) {
-  if (!isOpen) return null;
-
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+    if (e.target === e.currentTarget && !isPending) {
+      onCancelar();
     }
-  };
-
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
   };
 
   const cores = {
@@ -71,21 +64,23 @@ export default function ModalConfirmacao({
         </div>
 
         <div className="p-6">
-          <p className="text-gray-700 text-lg leading-relaxed">{mensagem}</p>
+          <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line">{mensagem}</p>
         </div>
 
         <div className="flex gap-3 p-6 pt-0">
           <button
-            onClick={onClose}
-            className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+            onClick={onCancelar}
+            className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+            disabled={isPending}
           >
             {textoBotaoCancelar}
           </button>
           <button
-            onClick={handleConfirm}
-            className={`flex-1 ${estilo.botao} text-white px-4 py-3 rounded-lg font-medium transition-colors`}
+            onClick={onConfirmar}
+            className={`flex-1 ${estilo.botao} text-white px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50`}
+            disabled={isPending}
           >
-            {textoBotaoConfirmar}
+            {isPending ? 'Processando...' : textoBotaoConfirmar}
           </button>
         </div>
       </div>

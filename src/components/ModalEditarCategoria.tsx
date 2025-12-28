@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { transacoesService } from '@/services/api.service';
+import { CriterioTipo } from '@/types';
 
 interface ModalEditarCategoriaProps {
   isOpen: boolean;
   onClose: () => void;
   categoriaAtual: string;
-  onSalvar: (novaCategoria: string) => Promise<void>;
+  descricaoTransacao: string; // Para usar como critério na regra
+  onSalvar: (novaCategoria: string, criarRegra?: { criterio: CriterioTipo; nomeRegra: string }) => Promise<void>;
   isPending: boolean;
 }
 
@@ -15,6 +17,7 @@ export default function ModalEditarCategoria({
   isOpen,
   onClose,
   categoriaAtual,
+  descricaoTransacao,
   onSalvar,
   isPending,
 }: ModalEditarCategoriaProps) {
@@ -22,12 +25,18 @@ export default function ModalEditarCategoria({
   const [categorias, setCategorias] = useState<string[]>([]);
   const [loadingCategorias, setLoadingCategorias] = useState(true);
   const [modoCustom, setModoCustom] = useState(false);
+  const [criarRegra, setCriarRegra] = useState(false);
+  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_CONTEM);
+  const [nomeRegra, setNomeRegra] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       carregarCategorias();
       setCategoria(categoriaAtual);
       setModoCustom(false);
+      setCriarRegra(false);
+      setCriterioRegra(CriterioTipo.DESCRICAO_CONTEM);
+      setNomeRegra('');
     }
   }, [isOpen, categoriaAtual]);
 
@@ -50,7 +59,13 @@ export default function ModalEditarCategoria({
       return;
     }
 
-    await onSalvar(categoria.trim());
+    if (criarRegra && !nomeRegra.trim()) {
+      alert('Digite um nome para a regra');
+      return;
+    }
+
+    const dadosRegra = criarRegra ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim() } : undefined;
+    await onSalvar(categoria.trim(), dadosRegra);
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -204,6 +219,73 @@ export default function ModalEditarCategoria({
             )}
           </div>
 
+          {/* Opção de Criar Regra */}
+          <div className="mt-6 border-t border-gray-200 pt-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={criarRegra}
+                onChange={(e) => setCriarRegra(e.target.checked)}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                disabled={isPending}
+              />
+              <span className="text-sm font-medium text-gray-900">
+                🔁 Criar regra para aplicar automaticamente
+              </span>
+            </label>
+
+            {criarRegra && (
+              <div className="mt-4 bg-blue-50 rounded-lg p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-blue-900 mb-2">
+                    Nome da regra:
+                  </label>
+                  <input
+                    type="text"
+                    value={nomeRegra}
+                    onChange={(e) => setNomeRegra(e.target.value)}
+                    className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={`Ex: ${descricaoTransacao} → ${categoria}`}
+                    disabled={isPending}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-blue-900 mb-2">
+                    Critério:
+                  </label>
+                  <select
+                    value={criterioRegra}
+                    onChange={(e) => setCriterioRegra(e.target.value as CriterioTipo)}
+                    className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isPending}
+                  >
+                    <option value={CriterioTipo.DESCRICAO_CONTEM}>
+                      Descrição contém "{descricaoTransacao}"
+                    </option>
+                    <option value={CriterioTipo.DESCRICAO_EXATA}>
+                      Descrição exata = "{descricaoTransacao}"
+                    </option>
+                    {categoriaAtual && (
+                      <option value={CriterioTipo.CATEGORIA}>
+                        Categoria = "{categoriaAtual}"
+                      </option>
+                    )}
+                  </select>
+                </div>
+
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">ℹ️ A regra será:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Aplicada em transações futuras automaticamente</li>
+                    <li>Pode ser aplicada retroativamente nas transações existentes</li>
+                    <li>Gerenciada na página de Regras</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Botões de Ação */}
           <div className="flex gap-3 mt-6">
             <button
@@ -217,9 +299,9 @@ export default function ModalEditarCategoria({
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-              disabled={isPending || !categoria.trim() || categoria === categoriaAtual}
+              disabled={isPending || !categoria.trim() || categoria === categoriaAtual || (criarRegra && !nomeRegra.trim())}
             >
-              {isPending ? 'Salvando...' : 'Salvar'}
+              {isPending ? 'Salvando...' : criarRegra ? 'Salvar e Criar Regra' : 'Salvar'}
             </button>
           </div>
         </form>

@@ -5,7 +5,6 @@ import { Tag } from '@/types';
 import Link from 'next/link';
 import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
 import BotaoVoltarTransacao from '@/components/BotaoVoltarTransacao';
-import SeletorTags from '@/components/SeletorTags';
 
 interface TransacaoPageProps {
   params: {
@@ -148,12 +147,27 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
               </div>
             </div>
 
-            {/* Seletor de Tags - Server Component */}
-            <SeletorTags
-              transacaoId={transacao.id}
-              tagsAtuais={transacao.tags || []}
-              todasTags={todasTags}
-            />
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                Tags
+              </label>
+              {transacao.tags && transacao.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {transacao.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="px-4 py-2 rounded-full text-white text-sm font-medium"
+                      style={{ backgroundColor: tag.cor || '#3B82F6' }}
+                    >
+                      {tag.nome}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">Nenhuma tag associada</p>
+              )}
+            </div>
 
             {transacao.observacoes && (
               <div>
@@ -178,7 +192,7 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
         </div>
 
         {/* Ações - Client Component */}
-        <BotoesAcaoTransacao transacao={transacao} />
+        <BotoesAcaoTransacao transacao={transacao} todasTags={todasTags} />
       </div>
     </main>
   );
