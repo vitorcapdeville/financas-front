@@ -11,7 +11,9 @@ export default async function ConfiguracoesPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <BotaoVoltar className="text-blue-600 hover:text-blue-800 mb-4 inline-block" />
+          <div className="mb-4">
+            <BotaoVoltar />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">⚙️ Configurações</h1>
           <p className="text-gray-600 mt-2">
             Gerencie as preferências do aplicativo

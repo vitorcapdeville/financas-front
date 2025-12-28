@@ -4,7 +4,7 @@ import { formatarData, formatarMoeda } from '@/utils/format';
 import { Tag } from '@/types';
 import Link from 'next/link';
 import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
-import BotaoVoltarTransacao from '@/components/BotaoVoltarTransacao';
+import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface TransacaoPageProps {
   params: {
@@ -65,7 +65,7 @@ export default async function TransacaoPage({ params, searchParams }: TransacaoP
         {/* Header */}
         <div className="mb-8">
           <div className="mb-4">
-            <BotaoVoltarTransacao />
+            <BotaoVoltar />
           </div>
           <h1 className="text-4xl font-bold text-gray-900">
             Detalhes da Transação

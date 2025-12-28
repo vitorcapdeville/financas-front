@@ -21,6 +21,11 @@ export default async function RegrasPage() {
   return (
     <main className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Botão Voltar */}
+        <div className="mb-4">
+          <BotaoVoltar />
+        </div>
+
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -30,11 +35,8 @@ export default async function RegrasPage() {
               {' '}({regrasAtivas} ativa{regrasAtivas !== 1 ? 's' : ''})
             </p>
           </div>
-          <div className="flex gap-4">
+          <div>
             <BotaoAplicarTodasRegras />
-            <BotaoVoltar className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors">
-              ← Voltar ao Dashboard
-            </BotaoVoltar>
           </div>
         </div>
 

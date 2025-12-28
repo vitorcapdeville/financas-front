@@ -12,7 +12,9 @@ export default async function TagsPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <BotaoVoltar className="text-blue-600 hover:text-blue-800 mb-4 inline-block" />
+          <div className="mb-4">
+            <BotaoVoltar />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">Gerenciar Tags</h1>
         </div>
 

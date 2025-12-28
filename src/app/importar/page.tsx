@@ -43,6 +43,11 @@ export default function ImportarPage() {
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-4xl mx-auto">
+        {/* Botão Voltar */}
+        <div className="mb-4">
+          <BotaoVoltar />
+        </div>
+
         <header className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Importar Dados
@@ -137,13 +142,6 @@ export default function ImportarPage() {
             <li>• data_fatura: define quando a fatura foi/será paga (para visualização por data de pagamento)</li>
             <li>• As transações importadas aparecerão no dashboard</li>
           </ul>
-        </div>
-
-        {/* Botão Voltar */}
-        <div className="mt-8">
-          <BotaoVoltar className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
-            ← Voltar
-          </BotaoVoltar>
         </div>
       </div>
     </main>

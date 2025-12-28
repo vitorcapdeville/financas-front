@@ -438,15 +438,34 @@ export default function MeuComponente() {
 }
 ```
 
-**Exemplo: Botão Voltar (Navegação Interna)**
+**Exemplo: Botão Voltar (Navegação com Preservação de Filtros)**
 
-**IMPORTANTE**: Para páginas que não possuem filtros próprios (tags, regras, importar, configurações), SEMPRE use o componente `<BotaoVoltar>` que faz `router.back()` para preservar TODO o estado da página anterior.
+**IMPORTANTE**: O componente `<BotaoVoltar>` usa `Link` ao invés de `router.back()` para garantir preservação de filtros.
+
+**Sistema de Origem**: Páginas que navegam para detalhes devem adicionar parâmetro `origem` na URL:
+
+```typescript
+// ✅ CORRETO: Adiciona origem ao navegar para detalhes
+const queryParams = new URLSearchParams();
+if (periodo) queryParams.set('periodo', periodo);
+if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+if (searchParams.tags) queryParams.set('tags', searchParams.tags);
+queryParams.set('origem', 'transacoes'); // ← Define de onde veio
+const queryString = queryParams.toString();
+
+<Link href={`/transacao/${id}?${queryString}`}>Ver Detalhes</Link>
+```
+
+**Valores válidos para `origem`**:
+- `transacoes` - Volta para /transacoes
+- `categoria:NomeCategoria` - Volta para /categoria/NomeCategoria
+- Sem origem - Volta para / (dashboard)
 
 ```typescript
 // ✅ CORRETO: Usa componente BotaoVoltar (já existe no projeto)
 import BotaoVoltar from '@/components/BotaoVoltar';
 
-export default function PaginaSemFiltros() {
+export default function PaginaDetalhes() {
   return (
     <div>
       {/* ✅ CORRETO: Componente reutilizável que usa router.back() */}
@@ -887,13 +906,104 @@ if (!confirm('Deseja deletar?')) return; // ❌ PROIBIDO
 - Modal com múltiplos estados: [src/components/ListaRegras.tsx](src/components/ListaRegras.tsx)
 - Modal após criar regra: [src/components/BotoesAcaoTransacao.tsx](src/components/BotoesAcaoTransacao.tsx)
 
-### 10. Navegação
+### 10. Botão Voltar Padronizado
+
+**REGRA CRÍTICA**: SEMPRE use o componente `<BotaoVoltar>` para navegação de retorno. NUNCA crie botões de voltar customizados.
+
+**Componente padrão**: [src/components/BotaoVoltar.tsx](src/components/BotaoVoltar.tsx)
+
+**Posicionamento**: SEMPRE no canto superior esquerdo da página, antes do título
+
+**Estilo padrão**:
+- Fundo cinza: `bg-gray-600 hover:bg-gray-700`
+- Texto branco: `text-white`
+- Padding: `px-6 py-3`
+- Bordas arredondadas: `rounded-lg`
+- Transição suave: `transition-colors`
+
+**Comportamento**: Usa `Link` para navegar preservando filtros. Detecta automaticamente a origem (dashboard, transacoes, categoria) através do parâmetro `origem` na URL.
+
+**Como usar**:
+
+```tsx
+// ✅ CORRETO: Uso padrão com texto default "← Voltar"
+import BotaoVoltar from '@/components/BotaoVoltar';
+
+<div className="mb-4">
+  <BotaoVoltar />
+</div>
+
+// ✅ CORRETO: Com texto customizado
+<div className="mb-4">
+  <BotaoVoltar>← Voltar ao Dashboard</BotaoVoltar>
+</div>
+
+// ✅ CORRETO: Com classes adicionais (raramente necessário)
+<BotaoVoltar className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors mb-2">
+  ← Voltar
+</BotaoVoltar>
+
+// ❌ ERRADO: Criar botão de voltar customizado
+<button onClick={() => router.back()}>Voltar</button>
+
+// ❌ ERRADO: Link direto sem preservar histórico
+<Link href="/">Voltar</Link>
+
+// ❌ ERRADO: Estilo diferente do padrão
+<BotaoVoltar className="text-blue-600 hover:text-blue-800">
+  Voltar
+</BotaoVoltar>
+```
+
+**Estrutura HTML recomendada em páginas**:
+
+```tsx
+export default function MinhaPage() {
+  return (
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto">
+        {/* Botão Voltar - SEMPRE primeiro */}
+        <div className="mb-4">
+          <BotaoVoltar />
+        </div>
+
+        {/* Header da página */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Título da Página</h1>
+          <p className="text-gray-600 mt-2">Descrição</p>
+        </div>
+
+        {/* Conteúdo */}
+      </div>
+    </main>
+  );
+}
+```
+
+**Páginas que DEVEM ter BotaoVoltar**:
+- ✅ [src/app/tags/page.tsx](src/app/tags/page.tsx)
+- ✅ [src/app/regras/page.tsx](src/app/regras/page.tsx)
+- ✅ [src/app/importar/page.tsx](src/app/importar/page.tsx)
+- ✅ [src/app/configuracoes/page.tsx](src/app/configuracoes/page.tsx)
+- ✅ [src/app/transacao/[id]/page.tsx](src/app/transacao/[id]/page.tsx)
+- ✅ [src/app/transacoes/page.tsx](src/app/transacoes/page.tsx)
+- ✅ [src/app/categoria/[nome]/page.tsx](src/app/categoria/[nome]/page.tsx)
+
+**Páginas que NÃO precisam de BotaoVoltar**:
+- ❌ [src/app/page.tsx](src/app/page.tsx) - Dashboard principal
+- ❌ Páginas que já têm navegação dedicada no NavegacaoPrincipal
+
+**Props do BotaoVoltar**:
+- `children?: React.ReactNode` - Texto do botão (default: "← Voltar")
+- `className?: string` - Classes CSS customizadas (raramente necessário)
+
+### 11. Navegação
 
 - Use `<Link>` do Next.js para navegação
 - Mantenha URLs semânticas
 - Use query params para filtros
 
-### 10. Formatação de Dados
+### 12. Formatação de Dados
 
 - Use funções utilitárias de `utils/format.ts`
 - `formatarMoeda()`: Para valores em R$

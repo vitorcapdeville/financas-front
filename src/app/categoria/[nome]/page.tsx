@@ -4,7 +4,7 @@ import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
 import FiltroTags from '@/components/FiltroTags';
 import Link from 'next/link';
-import BotaoVoltarDashboard from '@/components/BotaoVoltarDashboard';
+import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface CategoriaPageProps {
   params: {
@@ -87,11 +87,13 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
+        {/* Botão Voltar */}
+        <div className="mb-4">
+          <BotaoVoltar />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
-          <div className="mb-4">
-            <BotaoVoltarDashboard className="inline-flex items-center text-gray-600 hover:text-gray-900" />
-          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             {categoria}
           </h1>

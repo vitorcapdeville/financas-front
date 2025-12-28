@@ -4,7 +4,7 @@ import { calcularPeriodoCustomizado, extrairPeriodoDaURL } from '@/utils/periodo
 import FiltrosPeriodo from '@/components/FiltrosPeriodo';
 import FiltroTags from '@/components/FiltroTags';
 import Link from 'next/link';
-import BotaoVoltarDashboard from '@/components/BotaoVoltarDashboard';
+import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface TransacoesPageProps {
   searchParams: {
@@ -42,6 +42,11 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
   return (
     <main className="min-h-screen p-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
+        {/* Botão Voltar */}
+        <div className="mb-4">
+          <BotaoVoltar />
+        </div>
+
         <header className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Todas as Transações
@@ -54,9 +59,6 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
         {/* Filtros */}
         <div className="mb-4">
           <FiltrosPeriodo showDiaInicio={true} />
-          <div className="flex justify-end -mt-4">
-            <BotaoVoltarDashboard />
-          </div>
         </div>
 
         {/* Filtro de Tags */}
