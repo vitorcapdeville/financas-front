@@ -10,7 +10,7 @@ interface ModalEditarCategoriaProps {
   onClose: () => void;
   categoriaAtual: string;
   descricaoTransacao: string; // Para usar como critério na regra
-  onSalvar: (novaCategoria: string, criarRegra?: { criterio: CriterioTipo; nomeRegra: string }) => Promise<void>;
+  onSalvar: (novaCategoria: string, criarRegra?: { criterio: CriterioTipo; nomeRegra: string; criterio_valor: string }) => Promise<void>;
   isPending: boolean;
 }
 
@@ -27,8 +27,9 @@ export default function ModalEditarCategoria({
   const [loadingCategorias, setLoadingCategorias] = useState(true);
   const [modoCustom, setModoCustom] = useState(false);
   const [criarRegra, setCriarRegra] = useState(false);
-  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_CONTEM);
+  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_EXATA);
   const [nomeRegra, setNomeRegra] = useState('');
+  const [valorCriterio, setValorCriterio] = useState(descricaoTransacao);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,10 +37,11 @@ export default function ModalEditarCategoria({
       setCategoria(categoriaAtual);
       setModoCustom(false);
       setCriarRegra(false);
-      setCriterioRegra(CriterioTipo.DESCRICAO_CONTEM);
+      setCriterioRegra(CriterioTipo.DESCRICAO_EXATA);
       setNomeRegra('');
+      setValorCriterio(descricaoTransacao);
     }
-  }, [isOpen, categoriaAtual]);
+  }, [isOpen, categoriaAtual, descricaoTransacao]);
 
   const carregarCategorias = async () => {
     try {
@@ -54,7 +56,7 @@ export default function ModalEditarCategoria({
   };
 
   const gerarNomePadraoRegra = () => {
-    return `Aplicar categoria "${categoria}" em transações com "${descricaoTransacao}"`;
+    return `Aplicar categoria "${categoria}" em transações com "${valorCriterio}"`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,9 +65,13 @@ export default function ModalEditarCategoria({
       toast.error('Digite uma categoria');
       return;
     }
+    if (criarRegra && !valorCriterio.trim()) {
+      toast.error('Digite o valor do critério');
+      return;
+    }
 
     const dadosRegra = criarRegra 
-      ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra() } 
+      ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra(), criterio_valor: valorCriterio.trim() } 
       : undefined;
     await onSalvar(categoria.trim(), dadosRegra);
   };
@@ -263,7 +269,7 @@ export default function ModalEditarCategoria({
                     disabled={isPending}
                   >
                     <option value={CriterioTipo.DESCRICAO_CONTEM}>
-                      Descrição contém "{descricaoTransacao}"
+                      Descrição contém
                     </option>
                     <option value={CriterioTipo.DESCRICAO_EXATA}>
                       Descrição exata = "{descricaoTransacao}"
@@ -275,6 +281,23 @@ export default function ModalEditarCategoria({
                     )}
                   </select>
                 </div>
+
+                {/* Input do valor do critério apenas para 'descrição contém' */}
+                {criterioRegra === CriterioTipo.DESCRICAO_CONTEM && (
+                  <div>
+                    <label className="block text-sm font-medium text-blue-900 mb-2">
+                      Texto que a descrição deve conter:
+                    </label>
+                    <input
+                      type="text"
+                      value={valorCriterio}
+                      onChange={(e) => setValorCriterio(e.target.value)}
+                      className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Digite o texto do critério..."
+                      disabled={isPending}
+                    />
+                  </div>
+                )}
 
                 <div className="text-sm text-blue-800">
                   <p className="font-medium mb-1">ℹ️ A regra será:</p>

@@ -22,7 +22,7 @@ export default function BotoesAcaoTransacao({ transacao, todasTags }: BotoesAcao
   const [modalTags, setModalTags] = useState(false);
   const [regraParaAplicar, setRegraParaAplicar] = useState<{ id: number; nome: string } | null>(null);
 
-  const handleSalvarCategoria = async (novaCategoria: string, criarRegra?: { criterio: CriterioTipo; nomeRegra: string }) => {
+  const handleSalvarCategoria = async (novaCategoria: string, criarRegra?: { criterio: CriterioTipo; nomeRegra: string; criterio_valor: string }) => {
     startTransition(async () => {
       try {
         await atualizarCategoriaAction(transacao.id, novaCategoria);
@@ -31,7 +31,7 @@ export default function BotoesAcaoTransacao({ transacao, todasTags }: BotoesAcao
         if (criarRegra) {
           const criterioValor = criarRegra.criterio === CriterioTipo.CATEGORIA 
             ? (transacao.categoria || '') 
-            : transacao.descricao;
+            : criarRegra.criterio_valor;
           
           const regra = await criarRegraAction({
             nome: criarRegra.nomeRegra,
@@ -75,7 +75,7 @@ export default function BotoesAcaoTransacao({ transacao, todasTags }: BotoesAcao
 
   const handleSalvarValor = async (
     novoValor: number,
-    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; percentual: number }
+    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; percentual: number; criterio_valor: string }
   ) => {
     startTransition(async () => {
       try {
@@ -85,7 +85,7 @@ export default function BotoesAcaoTransacao({ transacao, todasTags }: BotoesAcao
         if (dadosRegra) {
           const criterioValor = dadosRegra.criterio === CriterioTipo.CATEGORIA 
             ? (transacao.categoria || '') 
-            : transacao.descricao;
+            : dadosRegra.criterio_valor;
           
           const regra = await criarRegraAction({
             nome: dadosRegra.nomeRegra,
@@ -126,7 +126,7 @@ export default function BotoesAcaoTransacao({ transacao, todasTags }: BotoesAcao
 
   const handleAdicionarTags = async (
     tagsIds: number[],
-    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; tags: number[] }
+    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; tags: number[]; criterio_valor: string }
   ) => {
     startTransition(async () => {
       try {
@@ -139,7 +139,7 @@ export default function BotoesAcaoTransacao({ transacao, todasTags }: BotoesAcao
         if (dadosRegra) {
           const criterioValor = dadosRegra.criterio === CriterioTipo.CATEGORIA 
             ? (transacao.categoria || '') 
-            : transacao.descricao;
+            : dadosRegra.criterio_valor;
           
           const regra = await criarRegraAction({
             nome: dadosRegra.nomeRegra,

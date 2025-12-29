@@ -13,7 +13,7 @@ interface ModalEditarValorProps {
   categoriaAtual?: string; // Para critério de categoria
   onSalvar: (
     novoValor: number,
-    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; percentual: number }
+    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; percentual: number; criterio_valor: string }
   ) => Promise<void>;
   onRestaurar?: () => Promise<void>; // Callback para restaurar valor original
   isPending: boolean;
@@ -32,8 +32,9 @@ export default function ModalEditarValor({
 }: ModalEditarValorProps) {
   const [valor, setValor] = useState(valorAtual);
   const [criarRegra, setCriarRegra] = useState(false);
-  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_CONTEM);
+  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_EXATA);
   const [nomeRegra, setNomeRegra] = useState('');
+  const [valorCriterio, setValorCriterio] = useState(descricaoTransacao);
 
   if (!isOpen) return null;
 
@@ -50,9 +51,9 @@ export default function ModalEditarValor({
     
     let descricaoCriterio = '';
     if (criterioRegra === CriterioTipo.DESCRICAO_CONTEM) {
-      descricaoCriterio = `contém "${descricaoTransacao}"`;
+      descricaoCriterio = `contém "${valorCriterio}"`;
     } else if (criterioRegra === CriterioTipo.DESCRICAO_EXATA) {
-      descricaoCriterio = `exata "${descricaoTransacao}"`;
+      descricaoCriterio = `exata "${valorCriterio}"`;
     } else if (criterioRegra === CriterioTipo.CATEGORIA && categoriaAtual) {
       descricaoCriterio = `categoria "${categoriaAtual}"`;
     }
@@ -63,6 +64,11 @@ export default function ModalEditarValor({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (criarRegra && !valorCriterio.trim()) {
+      toast.error('Digite o valor do critério');
+      return;
+    }
+    
     const baseValor = valorOriginal ?? valorAtual;
     const percentual = (valor / baseValor) * 100;
     
@@ -70,7 +76,8 @@ export default function ModalEditarValor({
       ? { 
           criterio: criterioRegra, 
           nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra(), 
-          percentual 
+          percentual,
+          criterio_valor: valorCriterio.trim()
         }
       : undefined;
     
@@ -262,7 +269,7 @@ export default function ModalEditarValor({
                       disabled={isPending}
                     >
                       <option value={CriterioTipo.DESCRICAO_CONTEM}>
-                        Descrição contém "{descricaoTransacao}"
+                        Descrição contém
                       </option>
                       <option value={CriterioTipo.DESCRICAO_EXATA}>
                         Descrição exata = "{descricaoTransacao}"
@@ -274,6 +281,23 @@ export default function ModalEditarValor({
                       )}
                     </select>
                   </div>
+
+                  {/* Input do valor do critério apenas para 'descrição contém' */}
+                  {criterioRegra === CriterioTipo.DESCRICAO_CONTEM && (
+                    <div>
+                      <label className="block text-sm font-medium text-blue-900 mb-2">
+                        Texto que a descrição deve conter:
+                      </label>
+                      <input
+                        type="text"
+                        value={valorCriterio}
+                        onChange={(e) => setValorCriterio(e.target.value)}
+                        className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Digite o texto do critério..."
+                        disabled={isPending}
+                      />
+                    </div>
+                  )}
 
                   <div className="text-sm text-blue-800 bg-blue-100 rounded p-3">
                     <p className="font-medium mb-1">ℹ️ Como funciona:</p>

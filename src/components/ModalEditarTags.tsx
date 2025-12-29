@@ -14,7 +14,7 @@ interface ModalEditarTagsProps {
   categoriaAtual?: string;
   onAdicionarTags: (
     tagsIds: number[],
-    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; tags: number[] }
+    dadosRegra?: { criterio: CriterioTipo; nomeRegra: string; tags: number[]; criterio_valor: string }
   ) => Promise<void>;
   onRemoverTag: (tagId: number) => Promise<void>;
   isPending: boolean;
@@ -34,8 +34,9 @@ export default function ModalEditarTags({
 }: ModalEditarTagsProps) {
   const [tagsParaAdicionar, setTagsParaAdicionar] = useState<number[]>([]);
   const [criarRegra, setCriarRegra] = useState(false);
-  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_CONTEM);
+  const [criterioRegra, setCriterioRegra] = useState<CriterioTipo>(CriterioTipo.DESCRICAO_EXATA);
   const [nomeRegra, setNomeRegra] = useState('');
+  const [valorCriterio, setValorCriterio] = useState(descricaoTransacao);
 
   if (!isOpen) return null;
 
@@ -59,9 +60,9 @@ export default function ModalEditarTags({
     
     let descricaoCriterio = '';
     if (criterioRegra === CriterioTipo.DESCRICAO_CONTEM) {
-      descricaoCriterio = `contém "${descricaoTransacao}"`;
+      descricaoCriterio = `contém "${valorCriterio}"`;
     } else if (criterioRegra === CriterioTipo.DESCRICAO_EXATA) {
-      descricaoCriterio = `exata "${descricaoTransacao}"`;
+      descricaoCriterio = `exata "${valorCriterio}"`;
     } else if (criterioRegra === CriterioTipo.CATEGORIA && categoriaAtual) {
       descricaoCriterio = `categoria "${categoriaAtual}"`;
     }
@@ -77,11 +78,17 @@ export default function ModalEditarTags({
       return;
     }
 
+    if (criarRegra && !valorCriterio.trim()) {
+      toast.error('Digite o valor do critério');
+      return;
+    }
+
     const dadosRegra = criarRegra
       ? {
           criterio: criterioRegra,
           nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra(),
           tags: tagsParaAdicionar,
+          criterio_valor: valorCriterio.trim(),
         }
       : undefined;
 
@@ -247,7 +254,7 @@ export default function ModalEditarTags({
                           disabled={isPending}
                         >
                           <option value={CriterioTipo.DESCRICAO_CONTEM}>
-                            Descrição contém "{descricaoTransacao}"
+                            Descrição contém
                           </option>
                           <option value={CriterioTipo.DESCRICAO_EXATA}>
                             Descrição exata = "{descricaoTransacao}"
@@ -259,6 +266,23 @@ export default function ModalEditarTags({
                           )}
                         </select>
                       </div>
+
+                      {/* Input do valor do critério apenas para 'descrição contém' */}
+                      {criterioRegra === CriterioTipo.DESCRICAO_CONTEM && (
+                        <div>
+                          <label className="block text-sm font-medium text-blue-900 mb-2">
+                            Texto que a descrição deve conter:
+                          </label>
+                          <input
+                            type="text"
+                            value={valorCriterio}
+                            onChange={(e) => setValorCriterio(e.target.value)}
+                            className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Digite o texto do critério..."
+                            disabled={isPending}
+                          />
+                        </div>
+                      )}
 
                       <div className="text-sm text-blue-800 bg-blue-100 rounded p-3">
                         <p className="font-medium mb-1">ℹ️ A regra será:</p>
