@@ -1,8 +1,6 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { configuracoesService } from '@/services/api.service';
 import { CriterioDataTransacao } from '@/types';
 
 export default function FiltrosPeriodo() {
@@ -13,39 +11,10 @@ export default function FiltrosPeriodo() {
   const periodoAtual = searchParams.get('periodo') || 
     `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const diaInicioAtual = parseInt(searchParams.get('diaInicio') || '1');
-  
-  const [criterioData, setCriterioData] = useState<CriterioDataTransacao>(
-    CriterioDataTransacao.DATA_TRANSACAO
-  );
+  const criterioData = (searchParams.get('criterio') || 'data_transacao') as CriterioDataTransacao;
 
   const mes = parseInt(periodoAtual.split('-')[1]);
   const ano = parseInt(periodoAtual.split('-')[0]);
-
-  // Carrega configurações do banco
-  useEffect(() => {
-    const carregarConfiguracoes = async () => {
-      try {
-        // Carrega dia de início
-        if (!searchParams.get('diaInicio')) {
-          const configDia = await configuracoesService.obter('diaInicioPeriodo');
-          if (configDia.valor) {
-            const params = new URLSearchParams(searchParams.toString());
-            params.set('diaInicio', configDia.valor);
-            router.replace(`?${params.toString()}`);
-          }
-        }
-        
-        // Carrega critério de data
-        const configCriterio = await configuracoesService.obter('criterio_data_transacao');
-        if (configCriterio.valor) {
-          setCriterioData(configCriterio.valor as CriterioDataTransacao);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
-      }
-    };
-    carregarConfiguracoes();
-  }, [searchParams, router]);
 
   const handlePeriodoChange = (novoPeriodo: string) => {
     const params = new URLSearchParams(searchParams.toString());

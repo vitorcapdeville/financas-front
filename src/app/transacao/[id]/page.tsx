@@ -13,16 +13,18 @@ interface TransacaoPageProps {
   searchParams: {
     periodo?: string;
     diaInicio?: string;
+    criterio?: string;
   };
 }
 
 export default async function TransacaoPage({ params, searchParams }: TransacaoPageProps) {
   const id = parseInt(params.id);
   
-  // Constrói query string preservando período e diaInicio
+  // Constrói query string preservando período, diaInicio e criterio
   const queryParams = new URLSearchParams();
   if (searchParams.periodo) queryParams.set('periodo', searchParams.periodo);
   if (searchParams.diaInicio) queryParams.set('diaInicio', searchParams.diaInicio);
+  if (searchParams.criterio) queryParams.set('criterio', searchParams.criterio);
   const queryString = queryParams.toString();
   
   // Busca transação no servidor

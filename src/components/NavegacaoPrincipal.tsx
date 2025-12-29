@@ -7,17 +7,19 @@ export function NavegacaoPrincipal() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // TODAS as páginas preservam filtros (periodo, diaInicio, tags)
+  // TODAS as páginas preservam filtros (periodo, diaInicio, criterio, tags)
   // Isso permite que o usuário navegue entre diferentes seções sem perder o contexto temporal
   const construirQueryString = (targetPath: string) => {
 
     const params = new URLSearchParams();
     const periodo = searchParams.get('periodo');
     const diaInicio = searchParams.get('diaInicio');
+    const criterio = searchParams.get('criterio');
     const tags = searchParams.get('tags');
 
     if (periodo) params.set('periodo', periodo);
     if (diaInicio) params.set('diaInicio', diaInicio);
+    if (criterio) params.set('criterio', criterio);
     if (tags) params.set('tags', tags);
 
     return params.toString();

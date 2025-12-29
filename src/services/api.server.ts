@@ -12,6 +12,7 @@ export const transacoesServerService = {
     categoria?: string;
     tipo?: string;
     tags?: string;
+    criterio_data_transacao?: string;
   }): Promise<Transacao[]> {
     const searchParams = new URLSearchParams();
     if (params) {
@@ -47,7 +48,8 @@ export const transacoesServerService = {
     ano?: number,
     data_inicio?: string,
     data_fim?: string,
-    tags?: string
+    tags?: string,
+    criterio_data_transacao?: string
   ): Promise<ResumoMensal> {
     const searchParams = new URLSearchParams();
     
@@ -61,6 +63,10 @@ export const transacoesServerService = {
     
     if (tags) {
       searchParams.append('tags', tags);
+    }
+    
+    if (criterio_data_transacao) {
+      searchParams.append('criterio_data_transacao', criterio_data_transacao);
     }
     
     const url = `${API_URL}/transacoes/resumo/mensal?${searchParams.toString()}`;

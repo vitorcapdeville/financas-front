@@ -10,18 +10,20 @@ interface TransacoesPageProps {
   searchParams: {
     periodo?: string;
     diaInicio?: string;
+    criterio?: string;
     tags?: string;
   };
 }
 
 export default async function TransacoesPage({ searchParams }: TransacoesPageProps) {
-  const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
+  const { periodo, mes, ano, diaInicio, criterio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período, diaInicio, tags e origem
+  // Constrói query string preservando período, diaInicio, criterio, tags e origem
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  if (criterio) queryParams.set('criterio', criterio);
   if (searchParams.tags) queryParams.set('tags', searchParams.tags);
   queryParams.set('origem', 'transacoes');
   const queryString = queryParams.toString();
@@ -32,7 +34,8 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
     transacoes = await transacoesServerService.listar({ 
       data_inicio, 
       data_fim,
-      tags: searchParams.tags
+      tags: searchParams.tags,
+      criterio_data_transacao: criterio
     });
   } catch (error) {
     console.error('Erro ao carregar transações:', error);

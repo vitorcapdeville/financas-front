@@ -1,11 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { CriterioDataTransacao } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export async function salvarDiaInicioAction(dia: number) {
+export async function salvarDiaInicioAction(dia: number, searchParamsString: string) {
   // Validação client-side
   if (!Number.isInteger(dia) || dia < 1 || dia > 28) {
     throw new Error('O dia de início deve estar entre 1 e 28');
@@ -27,12 +28,18 @@ export async function salvarDiaInicioAction(dia: number) {
     throw new Error(`Erro ao salvar dia de início: ${error}`);
   }
 
+  // Revalida todas as páginas que usam período/diaInicio
   revalidatePath('/configuracoes');
-  revalidatePath('/'); // Revalida dashboard também
-  return { success: true };
+  revalidatePath('/');
+  revalidatePath('/transacoes');
+  
+  // Atualiza URL com novo valor de diaInicio
+  const params = new URLSearchParams(searchParamsString);
+  params.set('diaInicio', dia.toString());
+  redirect(`/configuracoes?${params.toString()}`);
 }
 
-export async function salvarCriterioAction(criterio: string) {
+export async function salvarCriterioAction(criterio: string, searchParamsString: string) {
   // Validação client-side
   const criteriosValidos = Object.values(CriterioDataTransacao);
   if (!criteriosValidos.includes(criterio as CriterioDataTransacao)) {
@@ -55,7 +62,13 @@ export async function salvarCriterioAction(criterio: string) {
     throw new Error(`Erro ao salvar critério de data: ${error}`);
   }
 
+  // Revalida todas as páginas que usam critério de data
   revalidatePath('/configuracoes');
-  revalidatePath('/'); // Revalida dashboard também
-  return { success: true };
+  revalidatePath('/');
+  revalidatePath('/transacoes');
+  
+  // Atualiza URL com novo valor de criterio
+  const params = new URLSearchParams(searchParamsString);
+  params.set('criterio', criterio);
+  redirect(`/configuracoes?${params.toString()}`);
 }

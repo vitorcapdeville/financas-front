@@ -10,19 +10,21 @@ interface HomeProps {
   searchParams: {
     periodo?: string;
     diaInicio?: string;
+    criterio?: string;
     tags?: string;
   };
 }
 
 export default async function Home(props: HomeProps) {
   const { searchParams } = props;
-  const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
+  const { periodo, mes, ano, diaInicio, criterio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período, diaInicio e tags
+  // Constrói query string preservando período, diaInicio, criterio e tags
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  if (criterio) queryParams.set('criterio', criterio);
   if (searchParams.tags) queryParams.set('tags', searchParams.tags);
   const queryString = queryParams.toString();
   
@@ -34,7 +36,8 @@ export default async function Home(props: HomeProps) {
       undefined, 
       data_inicio, 
       data_fim,
-      searchParams.tags
+      searchParams.tags,
+      criterio
     );
   } catch (error) {
     console.error('Erro ao carregar resumo:', error);

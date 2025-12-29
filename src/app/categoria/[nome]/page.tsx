@@ -14,6 +14,7 @@ interface CategoriaPageProps {
     tipo?: 'entrada' | 'saida';
     periodo?: string;
     diaInicio?: string;
+    criterio?: string;
     tags?: string;
   };
 }
@@ -21,13 +22,14 @@ interface CategoriaPageProps {
 export default async function CategoriaPage({ params, searchParams }: CategoriaPageProps) {
   const categoria = decodeURIComponent(params.nome);
   const tipo = searchParams.tipo;
-  const { periodo, mes, ano, diaInicio } = extrairPeriodoDaURL(searchParams);
+  const { periodo, mes, ano, diaInicio, criterio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
-  // Constrói query string preservando período, diaInicio, tags e origem
+  // Constrói query string preservando período, diaInicio, criterio, tags e origem
   const queryParams = new URLSearchParams();
   if (periodo) queryParams.set('periodo', periodo);
   if (diaInicio) queryParams.set('diaInicio', diaInicio.toString());
+  if (criterio) queryParams.set('criterio', criterio);
   if (searchParams.tags) queryParams.set('tags', searchParams.tags);
   queryParams.set('origem', `categoria:${categoria}`);
   const queryString = queryParams.toString();
@@ -41,6 +43,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
       categoria: categoria === 'Sem categoria' ? 'null' : categoria,
       tipo: tipo || undefined,
       tags: searchParams.tags,
+      criterio_data_transacao: criterio
     });
   } catch (error) {
     console.error('Erro ao carregar transações:', error);
@@ -65,6 +68,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
         categoria: categoria === 'Sem categoria' ? 'null' : categoria,
         tipo: tipo || undefined,
         tags: searchParams.tags,
+        criterio_data_transacao: criterio
       });
 
       const total = transacoesMes.reduce((sum, t) => sum + t.valor, 0);

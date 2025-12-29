@@ -23,7 +23,7 @@ export function calcularPeriodoCustomizado(
 }
 
 /**
- * Extrai período e diaInicio dos searchParams com defaults
+ * Extrai período, diaInicio e criterio dos searchParams com defaults
  */
 export function extrairPeriodoDaURL(searchParams: Record<string, string | undefined> | { get: (key: string) => string | null }) {
   // Suporta tanto objeto simples (Server Components) quanto URLSearchParams (Client Components)
@@ -37,9 +37,10 @@ export function extrairPeriodoDaURL(searchParams: Record<string, string | undefi
   const periodo = getParam('periodo') || 
     `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const diaInicio = parseInt(getParam('diaInicio') || '1');
+  const criterio = getParam('criterio') || 'data_transacao';
   
   const mes = parseInt(periodo.split('-')[1]);
   const ano = parseInt(periodo.split('-')[0]);
   
-  return { periodo, diaInicio, mes, ano };
+  return { periodo, diaInicio, criterio, mes, ano };
 }
