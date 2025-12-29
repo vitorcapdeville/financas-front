@@ -53,6 +53,10 @@ export default function ModalEditarCategoria({
     }
   };
 
+  const gerarNomePadraoRegra = () => {
+    return `Aplicar categoria "${categoria}" em transações com "${descricaoTransacao}"`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoria.trim()) {
@@ -60,12 +64,9 @@ export default function ModalEditarCategoria({
       return;
     }
 
-    if (criarRegra && !nomeRegra.trim()) {
-      toast.error('Digite um nome para a regra');
-      return;
-    }
-
-    const dadosRegra = criarRegra ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim() } : undefined;
+    const dadosRegra = criarRegra 
+      ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra() } 
+      : undefined;
     await onSalvar(categoria.trim(), dadosRegra);
   };
 
@@ -246,7 +247,7 @@ export default function ModalEditarCategoria({
                     value={nomeRegra}
                     onChange={(e) => setNomeRegra(e.target.value)}
                     className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={`Ex: ${descricaoTransacao} → ${categoria}`}
+                    placeholder="(Opcional - será gerado automaticamente)"
                     disabled={isPending}
                   />
                 </div>
@@ -300,7 +301,7 @@ export default function ModalEditarCategoria({
             <button
               type="submit"
               className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-              disabled={isPending || !categoria.trim() || categoria === categoriaAtual || (criarRegra && !nomeRegra.trim())}
+              disabled={isPending || !categoria.trim() || categoria === categoriaAtual}
             >
               {isPending ? 'Salvando...' : criarRegra ? 'Salvar e Criar Regra' : 'Salvar'}
             </button>

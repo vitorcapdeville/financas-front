@@ -51,6 +51,24 @@ export default function ModalEditarTags({
     );
   };
 
+  const gerarNomePadraoRegra = () => {
+    const tagsNomes = tagsParaAdicionar
+      .map(tagId => todasTags.find(t => t.id === tagId)?.nome)
+      .filter(Boolean)
+      .join(', ');
+    
+    let descricaoCriterio = '';
+    if (criterioRegra === CriterioTipo.DESCRICAO_CONTEM) {
+      descricaoCriterio = `contém "${descricaoTransacao}"`;
+    } else if (criterioRegra === CriterioTipo.DESCRICAO_EXATA) {
+      descricaoCriterio = `exata "${descricaoTransacao}"`;
+    } else if (criterioRegra === CriterioTipo.CATEGORIA && categoriaAtual) {
+      descricaoCriterio = `categoria "${categoriaAtual}"`;
+    }
+    
+    return `Adicionar ${tagsNomes} em transações com ${descricaoCriterio}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -59,15 +77,10 @@ export default function ModalEditarTags({
       return;
     }
 
-    if (criarRegra && !nomeRegra.trim()) {
-      toast.error('Digite um nome para a regra');
-      return;
-    }
-
     const dadosRegra = criarRegra
       ? {
           criterio: criterioRegra,
-          nomeRegra: nomeRegra.trim(),
+          nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra(),
           tags: tagsParaAdicionar,
         }
       : undefined;
@@ -216,7 +229,7 @@ export default function ModalEditarTags({
                           value={nomeRegra}
                           onChange={(e) => setNomeRegra(e.target.value)}
                           className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Ex: Adicionar tags em transações de mercado"
+                          placeholder="(Opcional - será gerado automaticamente)"
                           disabled={isPending}
                         />
                       </div>

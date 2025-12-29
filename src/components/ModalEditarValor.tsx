@@ -44,19 +44,34 @@ export default function ModalEditarValor({
     setValor(Number(novoValor.toFixed(2)));
   };
 
+  const gerarNomePadraoRegra = () => {
+    const baseValor = valorOriginal ?? valorAtual;
+    const percentualAtual = ((valor / baseValor) * 100).toFixed(1);
+    
+    let descricaoCriterio = '';
+    if (criterioRegra === CriterioTipo.DESCRICAO_CONTEM) {
+      descricaoCriterio = `contém "${descricaoTransacao}"`;
+    } else if (criterioRegra === CriterioTipo.DESCRICAO_EXATA) {
+      descricaoCriterio = `exata "${descricaoTransacao}"`;
+    } else if (criterioRegra === CriterioTipo.CATEGORIA && categoriaAtual) {
+      descricaoCriterio = `categoria "${categoriaAtual}"`;
+    }
+    
+    return `Reduzir ${percentualAtual}% em transações com ${descricaoCriterio}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (criarRegra && !nomeRegra.trim()) {
-      toast.error('Digite um nome para a regra');
-      return;
-    }
     
     const baseValor = valorOriginal ?? valorAtual;
     const percentual = (valor / baseValor) * 100;
     
     const dadosRegra = criarRegra
-      ? { criterio: criterioRegra, nomeRegra: nomeRegra.trim(), percentual }
+      ? { 
+          criterio: criterioRegra, 
+          nomeRegra: nomeRegra.trim() || gerarNomePadraoRegra(), 
+          percentual 
+        }
       : undefined;
     
     await onSalvar(valor, dadosRegra);
@@ -231,7 +246,7 @@ export default function ModalEditarValor({
                       value={nomeRegra}
                       onChange={(e) => setNomeRegra(e.target.value)}
                       className="w-full border border-blue-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ex: Reduzir 50% em transações de Uber"
+                      placeholder="(Opcional - será gerado automaticamente)"
                       disabled={isPending}
                     />
                   </div>
