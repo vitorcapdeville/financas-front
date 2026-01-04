@@ -7,15 +7,17 @@ import Link from 'next/link';
 import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface TransacoesPageProps {
-  searchParams: {
+  searchParams: Promise<{
     periodo?: string;
     diaInicio?: string;
     criterio?: string;
     tags?: string;
-  };
+  }>;
 }
 
-export default async function TransacoesPage({ searchParams }: TransacoesPageProps) {
+export default async function TransacoesPage(props: TransacoesPageProps) {
+  // Next.js 16: searchParams é uma Promise que precisa ser awaited
+  const searchParams = await props.searchParams;
   const { periodo, mes, ano, diaInicio, criterio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
@@ -29,7 +31,7 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
   const queryString = queryParams.toString();
   
   // Busca transações no servidor
-  let transacoes;
+  let transacoes: import('@/types').Transacao[];
   try {
     transacoes = await transacoesServerService.listar({ 
       data_inicio, 
@@ -61,7 +63,7 @@ export default async function TransacoesPage({ searchParams }: TransacoesPagePro
 
         {/* Filtros */}
         <div className="mb-4">
-          <FiltrosPeriodo showDiaInicio={true} />
+          <FiltrosPeriodo />
         </div>
 
         {/* Filtro de Tags */}

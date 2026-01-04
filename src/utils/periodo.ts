@@ -24,20 +24,13 @@ export function calcularPeriodoCustomizado(
 
 /**
  * Extrai período, diaInicio e criterio dos searchParams com defaults
+ * Next.js 16: searchParams deve ser awaited antes de ser passado
  */
-export function extrairPeriodoDaURL(searchParams: Record<string, string | undefined> | { get: (key: string) => string | null }) {
-  // Suporta tanto objeto simples (Server Components) quanto URLSearchParams (Client Components)
-  const getParam = (key: string) => {
-    if ('get' in searchParams && typeof searchParams.get === 'function') {
-      return searchParams.get(key);
-    }
-    return (searchParams as Record<string, string | undefined>)[key] || null;
-  };
-  
-  const periodo = getParam('periodo') || 
+export function extrairPeriodoDaURL(searchParams: Record<string, string | undefined>) {
+  const periodo = searchParams.periodo || 
     `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-  const diaInicio = parseInt(getParam('diaInicio') || '1');
-  const criterio = getParam('criterio') || 'data_transacao';
+  const diaInicio = parseInt(searchParams.diaInicio || '1');
+  const criterio = searchParams.criterio || 'data_transacao';
   
   const mes = parseInt(periodo.split('-')[1]);
   const ano = parseInt(periodo.split('-')[0]);

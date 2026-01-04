@@ -7,19 +7,22 @@ import Link from 'next/link';
 import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface CategoriaPageProps {
-  params: {
+  params: Promise<{
     nome: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     tipo?: 'entrada' | 'saida';
     periodo?: string;
     diaInicio?: string;
     criterio?: string;
     tags?: string;
-  };
+  }>;
 }
 
-export default async function CategoriaPage({ params, searchParams }: CategoriaPageProps) {
+export default async function CategoriaPage(props: CategoriaPageProps) {
+  // Next.js 16: params e searchParams são Promises que precisam ser awaited
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const categoria = decodeURIComponent(params.nome);
   const tipo = searchParams.tipo;
   const { periodo, mes, ano, diaInicio, criterio } = extrairPeriodoDaURL(searchParams);
@@ -35,7 +38,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
   const queryString = queryParams.toString();
   
   // Busca transações do período atual
-  let transacoes;
+  let transacoes: import('@/types').Transacao[];
   try {
     transacoes = await transacoesServerService.listar({
       data_inicio,
@@ -107,7 +110,7 @@ export default async function CategoriaPage({ params, searchParams }: CategoriaP
         </div>
 
         {/* Filtro de Período */}
-        <FiltrosPeriodo showDiaInicio={false} />
+        <FiltrosPeriodo />
 
         {/* Filtro de Tags */}
         <FiltroTags />

@@ -88,7 +88,7 @@ export default function FiltroTags() {
               }`}
               style={
                 selecionada
-                  ? { backgroundColor: tag.cor || '#3B82F6', ringColor: tag.cor || '#3B82F6' }
+                  ? { backgroundColor: tag.cor || '#3B82F6' }
                   : {}
               }
             >

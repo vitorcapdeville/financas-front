@@ -7,16 +7,17 @@ import { NavegacaoPrincipal } from '@/components/NavegacaoPrincipal';
 import Link from 'next/link';
 
 interface HomeProps {
-  searchParams: {
+  searchParams: Promise<{
     periodo?: string;
     diaInicio?: string;
     criterio?: string;
     tags?: string;
-  };
+  }>;
 }
 
 export default async function Home(props: HomeProps) {
-  const { searchParams } = props;
+  // Next.js 16: searchParams é uma Promise que precisa ser awaited
+  const searchParams = await props.searchParams;
   const { periodo, mes, ano, diaInicio, criterio } = extrairPeriodoDaURL(searchParams);
   const { data_inicio, data_fim } = calcularPeriodoCustomizado(mes, ano, diaInicio);
   
@@ -59,7 +60,7 @@ export default async function Home(props: HomeProps) {
         <NavegacaoPrincipal />
 
         {/* Seletor de Período - Client Component */}
-        <FiltrosPeriodo showDiaInicio={true} />
+        <FiltrosPeriodo />
 
         {/* Filtro de Tags */}
         <FiltroTags />
