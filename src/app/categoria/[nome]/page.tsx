@@ -43,7 +43,7 @@ export default async function CategoriaPage(props: CategoriaPageProps) {
     transacoes = await transacoesServerService.listar({
       data_inicio,
       data_fim,
-      categoria: categoria === 'Sem categoria' ? 'null' : categoria,
+      categoria: categoria === 'Sem categoria' ? undefined : categoria,
       tipo: tipo || undefined,
       tags: searchParams.tags,
       criterio_data_transacao: criterio
@@ -68,7 +68,7 @@ export default async function CategoriaPage(props: CategoriaPageProps) {
       const transacoesMes = await transacoesServerService.listar({
         data_inicio: periodoAnterior.data_inicio,
         data_fim: periodoAnterior.data_fim,
-        categoria: categoria === 'Sem categoria' ? 'null' : categoria,
+        categoria: categoria === 'Sem categoria' ? undefined : categoria,
         tipo: tipo || undefined,
         tags: searchParams.tags,
         criterio_data_transacao: criterio
