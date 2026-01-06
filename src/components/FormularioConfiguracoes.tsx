@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { salvarDiaInicioAction, salvarCriterioAction } from '@/app/configuracoes/actions';
 import { CriterioDataTransacao } from '@/types';
@@ -18,7 +17,6 @@ export default function FormularioConfiguracoes({
   const [isPending, startTransition] = useTransition();
   const [diaAtual, setDiaAtual] = useState(diaInicioPeriodo);
   const [criterioAtual, setCriterioAtual] = useState(criterioDataTransacao);
-  const searchParams = useSearchParams();
 
   async function handleSalvarDia(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,7 +25,7 @@ export default function FormularioConfiguracoes({
 
     startTransition(async () => {
       try {
-        await salvarDiaInicioAction(dia, searchParams.toString());
+        await salvarDiaInicioAction(dia);
         setDiaAtual(dia);
         toast.success('Dia de início salvo com sucesso!');
       } catch (error) {
@@ -44,7 +42,7 @@ export default function FormularioConfiguracoes({
 
     startTransition(async () => {
       try {
-        await salvarCriterioAction(criterio, searchParams.toString());
+        await salvarCriterioAction(criterio);
         setCriterioAtual(criterio);
         toast.success('Critério de data salvo com sucesso!');
       } catch (error) {

@@ -111,7 +111,7 @@ describe('FormularioConfiguracoes', () => {
     fireEvent.click(botaoSalvar);
 
     await waitFor(() => {
-      expect(mockSalvarDiaInicioAction).toHaveBeenCalledWith(1, '');
+      expect(mockSalvarDiaInicioAction).toHaveBeenCalledWith(1);
     });
   });
 
@@ -146,7 +146,7 @@ describe('FormularioConfiguracoes', () => {
     fireEvent.click(botaoSalvarCriterio);
 
     await waitFor(() => {
-      expect(mockSalvarCriterioAction).toHaveBeenCalledWith('data_fatura', '');
+      expect(mockSalvarCriterioAction).toHaveBeenCalledWith('data_fatura');
     });
   });
 

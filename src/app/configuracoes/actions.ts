@@ -1,18 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { CriterioDataTransacao } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export async function salvarDiaInicioAction(dia: number, searchParamsString: string) {
+export async function salvarDiaInicioAction(dia: number) {
   // Validação client-side
   if (!Number.isInteger(dia) || dia < 1 || dia > 28) {
     throw new Error('O dia de início deve estar entre 1 e 28');
   }
 
-  const res = await fetch(`${API_URL}/configuracoes/`, {
+  const res = await fetch(`${API_URL}/configuracoes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -33,20 +32,17 @@ export async function salvarDiaInicioAction(dia: number, searchParamsString: str
   revalidatePath('/');
   revalidatePath('/transacoes');
   
-  // Atualiza URL com novo valor de diaInicio
-  const params = new URLSearchParams(searchParamsString);
-  params.set('diaInicio', dia.toString());
-  redirect(`/configuracoes?${params.toString()}`);
+  return { success: true };
 }
 
-export async function salvarCriterioAction(criterio: string, searchParamsString: string) {
+export async function salvarCriterioAction(criterio: string) {
   // Validação client-side
   const criteriosValidos = Object.values(CriterioDataTransacao);
   if (!criteriosValidos.includes(criterio as CriterioDataTransacao)) {
     throw new Error('Critério de data inválido');
   }
 
-  const res = await fetch(`${API_URL}/configuracoes/`, {
+  const res = await fetch(`${API_URL}/configuracoes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -67,8 +63,5 @@ export async function salvarCriterioAction(criterio: string, searchParamsString:
   revalidatePath('/');
   revalidatePath('/transacoes');
   
-  // Atualiza URL com novo valor de criterio
-  const params = new URLSearchParams(searchParamsString);
-  params.set('criterio', criterio);
-  redirect(`/configuracoes?${params.toString()}`);
+  return { success: true };
 }
