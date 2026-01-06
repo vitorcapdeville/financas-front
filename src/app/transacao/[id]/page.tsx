@@ -7,24 +7,28 @@ import BotoesAcaoTransacao from '@/components/BotoesAcaoTransacao';
 import BotaoVoltar from '@/components/BotaoVoltar';
 
 interface TransacaoPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     periodo?: string;
     diaInicio?: string;
     criterio?: string;
-  };
+  }>;
 }
 
 export default async function TransacaoPage({ params, searchParams }: TransacaoPageProps) {
-  const id = parseInt(params.id);
+  // Next.js 16: params e searchParams são Promises
+  const { id: idStr } = await params;
+  const search = await searchParams;
+  
+  const id = parseInt(idStr);
   
   // Constrói query string preservando período, diaInicio e criterio
   const queryParams = new URLSearchParams();
-  if (searchParams.periodo) queryParams.set('periodo', searchParams.periodo);
-  if (searchParams.diaInicio) queryParams.set('diaInicio', searchParams.diaInicio);
-  if (searchParams.criterio) queryParams.set('criterio', searchParams.criterio);
+  if (search.periodo) queryParams.set('periodo', search.periodo);
+  if (search.diaInicio) queryParams.set('diaInicio', search.diaInicio);
+  if (search.criterio) queryParams.set('criterio', search.criterio);
   const queryString = queryParams.toString();
   
   // Busca transação no servidor
